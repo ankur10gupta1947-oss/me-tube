@@ -1,0 +1,1211 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Elemental — Periodic Table Explorer</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Roboto+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --bg-page: #ffffff;
+      --bg-card: #ffffff;
+      --bg-media: #f4f4f0;
+      --text-primary: #202124;
+      --text-secondary: #3c4043;
+      --text-muted: #5f6368;
+      --border-color: #202124;
+      --border-subtle: #dadce0;
+      --accent-blue: #1a73e8;
+      --accent-blue-hover: #1557b0;
+      --accent-like: #d93025;
+      --radius-card: 28px;
+      --radius-media: 20px;
+      --radius-pill: 9999px;
+      --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      --font-mono: 'Roboto Mono', ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+
+      /* Category Colors (soft, high-contrast editorial palette) */
+      --cat-alkali-metal: #fee2e2;
+      --cat-alkaline-earth: #ffedd5;
+      --cat-transition-metal: #fef9c3;
+      --cat-post-transition: #dcfce7;
+      --cat-metalloid: #ccfbf1;
+      --cat-nonmetal: #dbeafe;
+      --cat-halogen: #e0e7ff;
+      --cat-noble-gas: #f3e8ff;
+      --cat-lanthanide: #fce7f3;
+      --cat-actinide: #ffe4e6;
+    }
+
+    *, *::before, *::after {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    html {
+      scroll-behavior: smooth;
+    }
+
+    body {
+      font-family: var(--font-sans);
+      background-color: var(--bg-page);
+      color: var(--text-primary);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 24px;
+      padding: 28px 24px 48px;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    /* ==========================================================================
+       HERO: INTERACTIVE PERIODIC TABLE
+       ========================================================================== */
+    .hero-table-card {
+      width: 100%;
+      max-width: 1120px;
+      background-color: var(--bg-card);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-card);
+      overflow: hidden;
+    }
+
+    .hero-header {
+      padding: 24px 32px;
+      border-bottom: 1px solid var(--border-color);
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+    }
+
+    .brand-group {
+      display: flex;
+      align-items: baseline;
+      gap: 14px;
+      flex-wrap: wrap;
+    }
+
+    .brand-title {
+      font-size: clamp(1.75rem, 3vw, 2.35rem);
+      font-weight: 700;
+      letter-spacing: -0.03em;
+      line-height: 1;
+    }
+
+    .brand-subtitle {
+      font-family: var(--font-mono);
+      font-size: 0.8125rem;
+      color: var(--text-muted);
+    }
+
+    .hero-controls {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
+    .search-input {
+      font-family: var(--font-sans);
+      font-size: 0.875rem;
+      padding: 9px 16px;
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-pill);
+      outline: none;
+      width: 220px;
+      background: #ffffff;
+      color: var(--text-primary);
+      transition: box-shadow 0.15s ease;
+    }
+
+    .search-input:focus {
+      box-shadow: 0 0 0 2px rgba(26, 115, 232, 0.25);
+      border-color: var(--accent-blue);
+    }
+
+    .btn-outline {
+      font-family: inherit;
+      font-size: 0.8125rem;
+      font-weight: 500;
+      padding: 9px 16px;
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-pill);
+      background: transparent;
+      color: var(--text-primary);
+      cursor: pointer;
+      transition: background-color 0.15s ease;
+    }
+
+    .btn-outline:hover {
+      background-color: #f1f3f4;
+    }
+
+    .filter-bar {
+      padding: 12px 32px;
+      border-bottom: 1px solid var(--border-color);
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      background-color: #fafafa;
+    }
+
+    .filter-pill {
+      font-family: var(--font-sans);
+      font-size: 0.75rem;
+      font-weight: 500;
+      padding: 5px 12px;
+      border-radius: var(--radius-pill);
+      border: 1px solid var(--border-subtle);
+      background: #ffffff;
+      color: var(--text-secondary);
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      transition: all 0.15s ease;
+    }
+
+    .filter-pill:hover {
+      border-color: var(--border-color);
+    }
+
+    .filter-pill.is-active {
+      background-color: var(--text-primary);
+      color: #ffffff;
+      border-color: var(--text-primary);
+    }
+
+    .filter-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      border: 1px solid rgba(0, 0, 0, 0.2);
+    }
+
+    .ptable-scroll {
+      padding: 20px 24px 24px;
+      overflow-x: auto;
+      background-color: #ffffff;
+    }
+
+    .ptable-grid {
+      display: grid;
+      grid-template-columns: repeat(18, minmax(44px, 1fr));
+      grid-template-rows: repeat(7, auto) 12px repeat(2, auto);
+      gap: 4px;
+      min-width: 860px;
+    }
+
+    .el-tile {
+      position: relative;
+      border: 1px solid rgba(32, 33, 36, 0.35);
+      border-radius: 8px;
+      padding: 5px 4px;
+      min-height: 54px;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      align-items: flex-start;
+      cursor: pointer;
+      text-align: left;
+      font-family: inherit;
+      color: var(--text-primary);
+      transition: transform 0.12s ease, box-shadow 0.12s ease, opacity 0.15s ease, border-color 0.12s ease;
+    }
+
+    .el-tile:hover {
+      transform: translateY(-2px);
+      border-color: var(--border-color);
+      box-shadow: 0 4px 10px rgba(0, 0, 0, 0.08);
+      z-index: 2;
+    }
+
+    .el-tile.is-selected {
+      border: 2px solid var(--accent-blue);
+      box-shadow: 0 0 0 2px rgba(26, 115, 232, 0.2);
+      z-index: 3;
+    }
+
+    .el-tile.is-dimmed {
+      opacity: 0.22;
+    }
+
+    .el-num {
+      font-family: var(--font-mono);
+      font-size: 0.625rem;
+      line-height: 1;
+      color: var(--text-secondary);
+    }
+
+    .el-sym {
+      font-size: 0.95rem;
+      font-weight: 700;
+      line-height: 1.1;
+      letter-spacing: -0.02em;
+    }
+
+    .el-name {
+      font-size: 0.5625rem;
+      line-height: 1.1;
+      color: var(--text-secondary);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      max-width: 100%;
+    }
+
+    .series-marker {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-family: var(--font-mono);
+      font-size: 0.6875rem;
+      color: var(--text-muted);
+      border: 1px dashed var(--border-subtle);
+      border-radius: 8px;
+      padding: 4px;
+    }
+
+    /* ==========================================================================
+       TEMPLATE CARD 1: ELEMENT HERO CARD
+       ========================================================================== */
+    .project-card {
+      width: 100%;
+      max-width: 1120px;
+      background-color: var(--bg-card);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-card);
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      overflow: hidden;
+    }
+
+    .card-left {
+      display: flex;
+      flex-direction: column;
+      border-right: 1px solid var(--border-color);
+    }
+
+    .card-section {
+      padding: 26px 32px;
+      border-bottom: 1px solid var(--border-color);
+    }
+
+    .card-title-section {
+      padding: 28px 32px 24px;
+      display: flex;
+      align-items: baseline;
+      justify-content: space-between;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+
+    .card-title {
+      font-size: clamp(2rem, 3.8vw, 3rem);
+      font-weight: 700;
+      letter-spacing: -0.03em;
+      line-height: 1.08;
+      color: var(--text-primary);
+    }
+
+    .card-symbol-badge {
+      font-family: var(--font-mono);
+      font-size: 1.125rem;
+      font-weight: 600;
+      padding: 4px 14px;
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-pill);
+      background-color: var(--bg-media);
+    }
+
+    .card-desc-section {
+      flex: 1;
+      display: flex;
+      align-items: flex-start;
+    }
+
+    .card-description {
+      font-size: clamp(1.05rem, 1.45vw, 1.25rem);
+      font-weight: 400;
+      line-height: 1.48;
+      color: var(--text-primary);
+    }
+
+    .card-meta-section {
+      padding: 22px 32px;
+    }
+
+    .card-meta {
+      font-size: 0.875rem;
+      line-height: 1.5;
+      color: var(--text-secondary);
+      margin-bottom: 14px;
+    }
+
+    .card-tags {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+
+    .tag-pill {
+      display: inline-flex;
+      align-items: center;
+      padding: 5px 14px;
+      font-size: 0.8125rem;
+      font-weight: 500;
+      color: var(--text-primary);
+      background: transparent;
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-pill);
+    }
+
+    .card-actions {
+      display: grid;
+      grid-template-columns: 1fr 84px 84px;
+      min-height: 84px;
+    }
+
+    .action-cta-cell {
+      padding: 16px 24px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-right: 1px solid var(--border-color);
+    }
+
+    .btn-primary {
+      width: 100%;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      padding: 14px 22px;
+      background-color: var(--accent-blue);
+      color: #ffffff;
+      border: none;
+      border-radius: var(--radius-pill);
+      font-family: inherit;
+      font-size: 0.9375rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background-color 0.15s ease, transform 0.1s ease;
+    }
+
+    .btn-primary:hover {
+      background-color: var(--accent-blue-hover);
+    }
+
+    .btn-primary:active {
+      transform: scale(0.99);
+    }
+
+    .action-icon-cell {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .action-icon-cell + .action-icon-cell {
+      border-left: 1px solid var(--border-color);
+    }
+
+    .btn-icon {
+      width: 100%;
+      height: 100%;
+      min-height: 64px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: transparent;
+      border: none;
+      color: var(--text-primary);
+      cursor: pointer;
+      transition: background-color 0.15s ease, color 0.15s ease;
+    }
+
+    .btn-icon:hover {
+      background-color: #f1f3f4;
+    }
+
+    .btn-icon.is-liked {
+      color: var(--accent-like);
+    }
+
+    .btn-icon svg {
+      width: 22px;
+      height: 22px;
+    }
+
+    /* Right Column: Interactive Bohr Shell & Element Card Visual */
+    .card-right {
+      padding: 24px;
+      display: flex;
+      align-items: stretch;
+      justify-content: center;
+    }
+
+    .media-slot {
+      width: 100%;
+      min-height: 380px;
+      border-radius: var(--radius-media);
+      background-color: var(--bg-media);
+      background-image:
+        linear-gradient(to right, rgba(0, 0, 0, 0.04) 1px, transparent 1px),
+        linear-gradient(to bottom, rgba(0, 0, 0, 0.04) 1px, transparent 1px);
+      background-size: 28px 28px;
+      border: 1px solid var(--border-color);
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      padding: 22px;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .bohr-top {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      gap: 12px;
+    }
+
+    .bohr-atomic-tag {
+      font-family: var(--font-mono);
+      font-size: 0.8125rem;
+      font-weight: 600;
+      padding: 4px 12px;
+      background: #ffffff;
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-pill);
+    }
+
+    .bohr-mass-tag {
+      font-family: var(--font-mono);
+      font-size: 0.8125rem;
+      color: var(--text-secondary);
+      background: #ffffff;
+      border: 1px solid var(--border-subtle);
+      padding: 4px 12px;
+      border-radius: var(--radius-pill);
+    }
+
+    .bohr-canvas-wrap {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex: 1;
+      padding: 8px 0;
+    }
+
+    .bohr-svg {
+      width: 100%;
+      max-width: 250px;
+      height: auto;
+    }
+
+    .bohr-bottom {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 8px;
+      flex-wrap: wrap;
+      font-family: var(--font-mono);
+      font-size: 0.75rem;
+      color: var(--text-secondary);
+      background: rgba(255, 255, 255, 0.9);
+      border: 1px solid var(--border-subtle);
+      border-radius: 12px;
+      padding: 8px 14px;
+    }
+
+    /* ==========================================================================
+       TEMPLATE CARD 2: DETAILS CARD (Monospace + Sidebar)
+       ========================================================================== */
+    .details-card {
+      width: 100%;
+      max-width: 1120px;
+      background-color: var(--bg-card);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-card);
+      display: grid;
+      grid-template-columns: 1.15fr 0.85fr;
+      overflow: hidden;
+    }
+
+    .details-left {
+      padding: 34px 36px 38px;
+      border-right: 1px solid var(--border-color);
+      font-family: var(--font-mono);
+      font-size: 0.9125rem;
+      line-height: 1.65;
+      color: var(--text-primary);
+      display: flex;
+      flex-direction: column;
+      gap: 18px;
+    }
+
+    .details-lead {
+      font-weight: 600;
+    }
+
+    .details-subheading {
+      font-size: 0.9375rem;
+      font-weight: 600;
+      margin-top: 6px;
+      color: var(--text-primary);
+    }
+
+    .details-list {
+      list-style: none;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      margin-top: 10px;
+    }
+
+    .details-list li {
+      display: flex;
+      align-items: flex-start;
+      gap: 10px;
+    }
+
+    .details-list-icon {
+      flex-shrink: 0;
+      color: var(--text-muted);
+    }
+
+    .details-right {
+      padding: 32px;
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+      background-color: var(--bg-card);
+    }
+
+    .sidebar-block {
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-media);
+      background-color: var(--bg-media);
+      padding: 20px 22px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .sidebar-label {
+      font-family: var(--font-mono);
+      font-size: 0.75rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      color: var(--text-muted);
+    }
+
+    .spec-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px 14px;
+    }
+
+    .spec-item {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+    }
+
+    .spec-key {
+      font-size: 0.75rem;
+      color: var(--text-muted);
+    }
+
+    .spec-val {
+      font-family: var(--font-mono);
+      font-size: 0.85rem;
+      font-weight: 600;
+      color: var(--text-primary);
+    }
+
+    .sidebar-nav {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .sidebar-btn {
+      font-family: var(--font-mono);
+      font-size: 0.8125rem;
+      color: var(--accent-blue);
+      background: transparent;
+      border: none;
+      padding: 2px 0;
+      text-align: left;
+      cursor: pointer;
+    }
+
+    .sidebar-btn:hover {
+      text-decoration: underline;
+    }
+
+    .favorites-wrap {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+    }
+
+    .fav-chip {
+      font-family: var(--font-mono);
+      font-size: 0.75rem;
+      font-weight: 600;
+      padding: 4px 10px;
+      border-radius: var(--radius-pill);
+      border: 1px solid var(--border-color);
+      background: #ffffff;
+      color: var(--text-primary);
+      cursor: pointer;
+    }
+
+    .fav-chip:hover {
+      background: var(--text-primary);
+      color: #ffffff;
+    }
+
+    .fav-empty {
+      font-size: 0.8125rem;
+      color: var(--text-muted);
+    }
+
+    /* ==========================================================================
+       TOAST NOTIFICATION
+       ========================================================================== */
+    .toast {
+      position: fixed;
+      bottom: 24px;
+      left: 50%;
+      transform: translateX(-50%) translateY(16px);
+      background-color: var(--text-primary);
+      color: #ffffff;
+      padding: 10px 18px;
+      border-radius: var(--radius-pill);
+      font-size: 0.875rem;
+      font-weight: 500;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.2s ease, transform 0.2s ease;
+      z-index: 100;
+    }
+
+    .toast.is-visible {
+      opacity: 1;
+      transform: translateX(-50%) translateY(0);
+    }
+
+    @media (max-width: 860px) {
+      body {
+        padding: 16px;
+      }
+
+      .hero-header,
+      .filter-bar {
+        padding: 18px 20px;
+      }
+
+      .project-card,
+      .details-card {
+        grid-template-columns: 1fr;
+      }
+
+      .card-left,
+      .details-left {
+        border-right: none;
+        border-bottom: 1px solid var(--border-color);
+      }
+
+      .card-section,
+      .card-title-section,
+      .card-meta-section,
+      .details-left,
+      .details-right {
+        padding: 22px 24px;
+      }
+
+      .card-actions {
+        grid-template-columns: 1fr 68px 68px;
+        min-height: 76px;
+      }
+
+      .card-right {
+        padding: 16px;
+      }
+
+      .media-slot {
+        min-height: 300px;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- HERO: INTERACTIVE PERIODIC TABLE -->
+  <section class="hero-table-card" id="periodic-table" aria-label="Elemental Periodic Table">
+    <div class="hero-header">
+      <div class="brand-group">
+        <h1 class="brand-title">Elemental</h1>
+        <span class="brand-subtitle">Interactive Periodic Table Explorer · Click any element</span>
+      </div>
+      <div class="hero-controls">
+        <input type="search" class="search-input" id="searchInput" placeholder="Search name, symbol, #..." aria-label="Search elements" />
+        <button type="button" class="btn-outline" id="randomBtn">Random element</button>
+      </div>
+    </div>
+
+    <div class="filter-bar" id="filterBar" role="group" aria-label="Filter by element category"></div>
+
+    <div class="ptable-scroll">
+      <div class="ptable-grid" id="ptableGrid"></div>
+    </div>
+  </section>
+
+  <!-- TEMPLATE CARD 1: SELECTED ELEMENT HERO -->
+  <main class="project-card" id="element-card">
+    <div class="card-left">
+      <header class="card-section card-title-section">
+        <h2 class="card-title" id="elTitle">Hydrogen</h2>
+        <span class="card-symbol-badge" id="elSymbolBadge">H · #1</span>
+      </header>
+
+      <section class="card-section card-desc-section">
+        <p class="card-description" id="elSummary"></p>
+      </section>
+
+      <section class="card-section card-meta-section">
+        <p class="card-meta" id="elMeta"></p>
+        <div class="card-tags" id="elTags"></div>
+      </section>
+
+      <footer class="card-actions">
+        <div class="action-cta-cell">
+          <button type="button" class="btn-primary" id="launchBtn">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <polygon points="6 3 20 12 6 21 6 3"></polygon>
+            </svg>
+            <span id="launchBtnText">Next element</span>
+          </button>
+        </div>
+
+        <div class="action-icon-cell">
+          <button type="button" class="btn-icon" id="likeBtn" aria-label="Bookmark element" aria-pressed="false">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path>
+            </svg>
+          </button>
+        </div>
+
+        <div class="action-icon-cell">
+          <button type="button" class="btn-icon" id="shareBtn" aria-label="Share element">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <circle cx="18" cy="5" r="3"></circle>
+              <circle cx="6" cy="12" r="3"></circle>
+              <circle cx="18" cy="19" r="3"></circle>
+              <line x1="8.59" y1="13.51" x2="15.42" y2="17.49"></line>
+              <line x1="15.41" y1="6.51" x2="8.59" y2="10.49"></line>
+            </svg>
+          </button>
+        </div>
+      </footer>
+    </div>
+
+    <!-- Right Column: Dynamic Bohr Shell Diagram -->
+    <div class="card-right">
+      <div class="media-slot" id="mediaSlot">
+        <div class="bohr-top">
+          <span class="bohr-atomic-tag" id="bohrAtomic">Z = 1</span>
+          <span class="bohr-mass-tag" id="bohrMass">1.008 u</span>
+        </div>
+        <div class="bohr-canvas-wrap" id="bohrWrap"></div>
+        <div class="bohr-bottom">
+          <span id="bohrConfig">1s¹</span>
+          <span id="bohrShells">Shells: 1</span>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <!-- TEMPLATE CARD 2: ELEMENT DETAILS & SIDEBAR -->
+  <section class="details-card" aria-label="Element technical details">
+    <div class="details-left">
+      <p class="details-lead" id="detailsLead"></p>
+      <p id="detailsOverview"></p>
+      <p id="detailsUses"></p>
+
+      <div>
+        <h3 class="details-subheading">Atomic &amp; Physical Properties</h3>
+        <ul class="details-list" id="detailsProps"></ul>
+      </div>
+    </div>
+
+    <aside class="details-right">
+      <div class="sidebar-block">
+        <span class="sidebar-label">Quick Specifications</span>
+        <div class="spec-grid" id="specGrid"></div>
+      </div>
+
+      <div class="sidebar-block">
+        <span class="sidebar-label">Explore Navigation</span>
+        <div class="sidebar-nav">
+          <button type="button" class="sidebar-btn" id="prevElBtn">← Previous Element</button>
+          <button type="button" class="sidebar-btn" id="nextElBtn">→ Next Element</button>
+          <button type="button" class="sidebar-btn" id="backTopBtn">↑ Back to Periodic Table</button>
+        </div>
+      </div>
+
+      <div class="sidebar-block">
+        <span class="sidebar-label">Bookmarked Elements</span>
+        <div class="favorites-wrap" id="favoritesWrap"></div>
+      </div>
+    </aside>
+  </section>
+
+  <div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+  <script>
+    const ELEMENTS = [{"number": 1, "symbol": "H", "name": "Hydrogen", "mass": "1.008", "category": "nonmetal", "group": 1, "period": 1, "row": 1, "col": 1, "block": "s", "phase": "Gas", "shells": [1], "config": "1s¹", "melt": "13.99 K", "boil": "20.27 K", "density": "0.00008988 g/cm³", "en": "2.20", "discovered": "1766 · Henry Cavendish", "summary": "The lightest and most abundant chemical element in the universe, making up roughly 75% of all normal matter and powering stars through nuclear fusion.", "uses": "Used in ammonia production (Haber process), petroleum refining, rocket fuel, and clean hydrogen fuel cells."}, {"number": 2, "symbol": "He", "name": "Helium", "mass": "4.0026", "category": "noble-gas", "group": 18, "period": 1, "row": 1, "col": 18, "block": "s", "phase": "Gas", "shells": [2], "config": "1s²", "melt": "0.95 K", "boil": "4.22 K", "density": "0.0001786 g/cm³", "en": "—", "discovered": "1868 · Pierre Janssen & Norman Lockyer", "summary": "A colorless, odorless, inert monatomic gas and the second most abundant element in the observable universe, formed by nuclear fusion in stars.", "uses": "Used for cryogenics (cooling MRI magnets), pressurized purging, arc welding shielding, and lighter-than-air balloons."}, {"number": 3, "symbol": "Li", "name": "Lithium", "mass": "6.94", "category": "alkali-metal", "group": 1, "period": 2, "row": 2, "col": 1, "block": "s", "phase": "Solid", "shells": [2, 1], "config": "[He] 2s¹", "melt": "453.65 K", "boil": "1603 K", "density": "0.534 g/cm³", "en": "0.98", "discovered": "1817 · Johan August Arfwedson", "summary": "The lightest solid element and least dense metal, highly reactive and flammable in water due to its single valence electron.", "uses": "Essential for rechargeable lithium-ion batteries in EVs and electronics, ceramic glass, and mood-stabilizing pharmaceuticals."}, {"number": 4, "symbol": "Be", "name": "Beryllium", "mass": "9.0122", "category": "alkaline-earth", "group": 2, "period": 2, "row": 2, "col": 2, "block": "s", "phase": "Solid", "shells": [2, 2], "config": "[He] 2s²", "melt": "1560 K", "boil": "2742 K", "density": "1.85 g/cm³", "en": "1.57", "discovered": "1798 · Louis Nicolas Vauquelin", "summary": "A relatively rare, steel-gray, lightweight alkaline earth metal with high stiffness and thermal conductivity.", "uses": "Used in aerospace structural components, X-ray tube windows, and non-sparking beryllium-copper alloys."}, {"number": 5, "symbol": "B", "name": "Boron", "mass": "10.81", "category": "metalloid", "group": 13, "period": 2, "row": 2, "col": 13, "block": "p", "phase": "Solid", "shells": [2, 3], "config": "[He] 2s² 2p¹", "melt": "2349 K", "boil": "4200 K", "density": "2.34 g/cm³", "en": "2.04", "discovered": "1808 · Joseph Louis Gay-Lussac & Humphry Davy", "summary": "A hard, refractory metalloid that forms strong covalent networks and acts as a semiconductor at high temperatures.", "uses": "Used in borosilicate glass (Pyrex), fiberglass insulation, neodymium magnets, and agricultural fertilizers."}, {"number": 6, "symbol": "C", "name": "Carbon", "mass": "12.011", "category": "nonmetal", "group": 14, "period": 2, "row": 2, "col": 14, "block": "p", "phase": "Solid", "shells": [2, 4], "config": "[He] 2s² 2p²", "melt": "3823 K (subl.)", "boil": "4098 K (subl.)", "density": "2.267 g/cm³", "en": "2.55", "discovered": "Ancient", "summary": "The chemical backbone of all known organic life, capable of forming four covalent bonds and diverse allotropes from diamond to graphene.", "uses": "Found in all organic molecules, steelmaking (coke), carbon fiber composites, activated charcoal, and electronics."}, {"number": 7, "symbol": "N", "name": "Nitrogen", "mass": "14.007", "category": "nonmetal", "group": 15, "period": 2, "row": 2, "col": 15, "block": "p", "phase": "Gas", "shells": [2, 5], "config": "[He] 2s² 2p³", "melt": "63.15 K", "boil": "77.36 K", "density": "0.001251 g/cm³", "en": "3.04", "discovered": "1772 · Daniel Rutherford", "summary": "A colorless, odorless diatomic gas that makes up 78% of Earth's atmosphere and is vital to amino acids and nucleic acids.", "uses": "Used to produce ammonia fertilizers, inert food packaging, liquid nitrogen cryogenics, and pharmaceutical synthesis."}, {"number": 8, "symbol": "O", "name": "Oxygen", "mass": "15.999", "category": "nonmetal", "group": 16, "period": 2, "row": 2, "col": 16, "block": "p", "phase": "Gas", "shells": [2, 6], "config": "[He] 2s² 2p⁴", "melt": "54.36 K", "boil": "90.20 K", "density": "0.001429 g/cm³", "en": "3.44", "discovered": "1774 · Carl Wilhelm Scheele & Joseph Priestley", "summary": "A highly reactive nonmetal and oxidizing agent that forms 21% of Earth's atmosphere and nearly half of Earth's crust by mass.", "uses": "Essential for cellular respiration, steelmaking, medical oxygen therapy, water treatment, and rocket oxidizers."}, {"number": 9, "symbol": "F", "name": "Fluorine", "mass": "18.998", "category": "halogen", "group": 17, "period": 2, "row": 2, "col": 17, "block": "p", "phase": "Gas", "shells": [2, 7], "config": "[He] 2s² 2p⁵", "melt": "53.48 K", "boil": "85.03 K", "density": "0.001696 g/cm³", "en": "3.98", "discovered": "1886 · Henri Moissan", "summary": "The most chemically reactive and electronegative of all elements, existing as a pale yellow toxic diatomic gas.", "uses": "Used in fluoropolymers (PTFE/Teflon), dental fluoride compounds, semiconductor etching, and uranium enrichment."}, {"number": 10, "symbol": "Ne", "name": "Neon", "mass": "20.180", "category": "noble-gas", "group": 18, "period": 2, "row": 2, "col": 18, "block": "p", "phase": "Gas", "shells": [2, 8], "config": "[He] 2s² 2p⁶", "melt": "24.56 K", "boil": "27.07 K", "density": "0.0008999 g/cm³", "en": "—", "discovered": "1898 · William Ramsay & Morris Travers", "summary": "An inert noble gas that glows with a vivid reddish-orange light when excited in high-voltage discharge tubes.", "uses": "Used in neon signage, high-voltage indicators, helium-neon lasers, and cryogenic refrigeration."}, {"number": 11, "symbol": "Na", "name": "Sodium", "mass": "22.990", "category": "alkali-metal", "group": 1, "period": 3, "row": 3, "col": 1, "block": "s", "phase": "Solid", "shells": [2, 8, 1], "config": "[Ne] 3s¹", "melt": "370.94 K", "boil": "1156 K", "density": "0.968 g/cm³", "en": "0.93", "discovered": "1807 · Humphry Davy", "summary": "A soft, silvery-white, highly reactive alkali metal that tarnishes rapidly in air and reacts vigorously with water.", "uses": "Essential electrolyte in biology; used in table salt (NaCl), street lamps, chemical synthesis, and sodium-ion batteries."}, {"number": 12, "symbol": "Mg", "name": "Magnesium", "mass": "24.305", "category": "alkaline-earth", "group": 2, "period": 3, "row": 3, "col": 2, "block": "s", "phase": "Solid", "shells": [2, 8, 2], "config": "[Ne] 3s²", "melt": "923 K", "boil": "1363 K", "density": "1.738 g/cm³", "en": "1.31", "discovered": "1755 · Joseph Black", "summary": "A shiny gray alkaline earth metal that burns with a brilliant white light and sits at the center of the chlorophyll molecule.", "uses": "Used in lightweight aluminum-magnesium aerospace alloys, automotive parts, flares, and dietary supplements."}, {"number": 13, "symbol": "Al", "name": "Aluminum", "mass": "26.982", "category": "post-transition", "group": 13, "period": 3, "row": 3, "col": 13, "block": "p", "phase": "Solid", "shells": [2, 8, 3], "config": "[Ne] 3s² 3p¹", "melt": "933.47 K", "boil": "2743 K", "density": "2.70 g/cm³", "en": "1.61", "discovered": "1825 · Hans Christian Ørsted", "summary": "The most abundant metal in Earth's crust, prized for its low density, corrosion resistance via passivation, and recyclability.", "uses": "Used in aircraft fuselages, beverage cans, power transmission lines, window frames, and heat sinks."}, {"number": 14, "symbol": "Si", "name": "Silicon", "mass": "28.085", "category": "metalloid", "group": 14, "period": 3, "row": 3, "col": 14, "block": "p", "phase": "Solid", "shells": [2, 8, 4], "config": "[Ne] 3s² 3p²", "melt": "1687 K", "boil": "3538 K", "density": "2.329 g/cm³", "en": "1.90", "discovered": "1823 · Jöns Jacob Berzelius", "summary": "A hard, brittle crystalline metalloid and tetravalent semiconductor that forms the basis of silicate minerals and modern electronics.", "uses": "Used in microchips, solar photovoltaic cells, glass, concrete, and silicone polymers."}, {"number": 15, "symbol": "P", "name": "Phosphorus", "mass": "30.974", "category": "nonmetal", "group": 15, "period": 3, "row": 3, "col": 15, "block": "p", "phase": "Solid", "shells": [2, 8, 5], "config": "[Ne] 3s² 3p³", "melt": "317.30 K", "boil": "553.7 K", "density": "1.823 g/cm³", "en": "2.19", "discovered": "1669 · Hennig Brand", "summary": "A reactive nonmetal existing in white, red, and black allotropes, essential to DNA, RNA, and cellular energy (ATP).", "uses": "Used in agricultural fertilizers, safety matches, detergents, and steel production."}, {"number": 16, "symbol": "S", "name": "Sulfur", "mass": "32.06", "category": "nonmetal", "group": 16, "period": 3, "row": 3, "col": 16, "block": "p", "phase": "Solid", "shells": [2, 8, 6], "config": "[Ne] 3s² 3p⁴", "melt": "388.36 K", "boil": "717.8 K", "density": "2.07 g/cm³", "en": "2.58", "discovered": "Ancient", "summary": "A bright yellow, odorless crystalline nonmetal in its pure form, well known for forming pungent compounds and volcanic deposits.", "uses": "Used to manufacture sulfuric acid, vulcanize rubber, and produce fertilizers and fungicides."}, {"number": 17, "symbol": "Cl", "name": "Chlorine", "mass": "35.45", "category": "halogen", "group": 17, "period": 3, "row": 3, "col": 17, "block": "p", "phase": "Gas", "shells": [2, 8, 7], "config": "[Ne] 3s² 3p⁵", "melt": "171.6 K", "boil": "239.11 K", "density": "0.003214 g/cm³", "en": "3.16", "discovered": "1774 · Carl Wilhelm Scheele", "summary": "A yellow-green, pungent halogen gas that is a strong oxidizing agent and readily forms chloride salts like NaCl.", "uses": "Used in drinking water disinfection, PVC plastics, bleach, and pharmaceutical manufacturing."}, {"number": 18, "symbol": "Ar", "name": "Argon", "mass": "39.948", "category": "noble-gas", "group": 18, "period": 3, "row": 3, "col": 18, "block": "p", "phase": "Gas", "shells": [2, 8, 8], "config": "[Ne] 3s² 3p⁶", "melt": "83.81 K", "boil": "87.30 K", "density": "0.001784 g/cm³", "en": "—", "discovered": "1894 · Lord Rayleigh & William Ramsay", "summary": "The third most abundant gas in Earth's atmosphere (~0.93%), chemically inert under almost all conditions.", "uses": "Used as an inert shielding gas in arc welding, incandescent light bulbs, and double-pane window insulation."}, {"number": 19, "symbol": "K", "name": "Potassium", "mass": "39.098", "category": "alkali-metal", "group": 1, "period": 4, "row": 4, "col": 1, "block": "s", "phase": "Solid", "shells": [2, 8, 8, 1], "config": "[Ar] 4s¹", "melt": "336.7 K", "boil": "1032 K", "density": "0.89 g/cm³", "en": "0.82", "discovered": "1807 · Humphry Davy", "summary": "A soft, silvery alkali metal that oxidizes rapidly in air and ignites on contact with water, vital to nerve signaling.", "uses": "Used primarily in potash agricultural fertilizers, soaps, glassmaking, and medical electrolyte solutions."}, {"number": 20, "symbol": "Ca", "name": "Calcium", "mass": "40.078", "category": "alkaline-earth", "group": 2, "period": 4, "row": 4, "col": 2, "block": "s", "phase": "Solid", "shells": [2, 8, 8, 2], "config": "[Ar] 4s²", "melt": "1115 K", "boil": "1757 K", "density": "1.55 g/cm³", "en": "1.00", "discovered": "1808 · Humphry Davy", "summary": "A reactive alkaline earth metal and the fifth most abundant element in Earth's crust, forming bones, teeth, and shells.", "uses": "Used in cement and mortar production, steel deoxidizing, and nutritional supplements."}, {"number": 21, "symbol": "Sc", "name": "Scandium", "mass": "44.956", "category": "transition-metal", "group": 3, "period": 4, "row": 4, "col": 3, "block": "d", "phase": "Solid", "shells": [2, 8, 9, 2], "config": "[Ar] 3d¹ 4s²", "melt": "1814 K", "boil": "3109 K", "density": "2.985 g/cm³", "en": "1.36", "discovered": "1879 · Lars Fredrik Nilson", "summary": "A silvery-white, lightweight transition metal historically grouped with rare-earth elements due to its occurrence in similar ores.", "uses": "Used in high-strength aluminum-scandium aerospace alloys, sports equipment, and high-intensity stadium lighting."}, {"number": 22, "symbol": "Ti", "name": "Titanium", "mass": "47.867", "category": "transition-metal", "group": 4, "period": 4, "row": 4, "col": 4, "block": "d", "phase": "Solid", "shells": [2, 8, 10, 2], "config": "[Ar] 3d² 4s²", "melt": "1941 K", "boil": "3560 K", "density": "4.506 g/cm³", "en": "1.54", "discovered": "1791 · William Gregor", "summary": "A lustrous, corrosion-resistant transition metal with the highest strength-to-density ratio of any metallic element.", "uses": "Used in jet engines, spacecraft, medical implants, and titanium dioxide white pigments."}, {"number": 23, "symbol": "V", "name": "Vanadium", "mass": "50.942", "category": "transition-metal", "group": 5, "period": 4, "row": 4, "col": 5, "block": "d", "phase": "Solid", "shells": [2, 8, 11, 2], "config": "[Ar] 3d³ 4s²", "melt": "2183 K", "boil": "3680 K", "density": "6.11 g/cm³", "en": "1.63", "discovered": "1801 · Andrés Manuel del Río", "summary": "A hard, silvery-gray, malleable transition metal that forms colorful compounds in multiple oxidation states.", "uses": "Used as a strengthening alloy additive in tool steels, vanadium redox flow batteries, and chemical catalysts."}, {"number": 24, "symbol": "Cr", "name": "Chromium", "mass": "51.996", "category": "transition-metal", "group": 6, "period": 4, "row": 4, "col": 6, "block": "d", "phase": "Solid", "shells": [2, 8, 13, 1], "config": "[Ar] 3d⁵ 4s¹", "melt": "2180 K", "boil": "2944 K", "density": "7.15 g/cm³", "en": "1.66", "discovered": "1797 · Louis Nicolas Vauquelin", "summary": "A steely-gray, lustrous, hard transition metal prized for its mirror-like polish and resistance to tarnishing.", "uses": "Essential for stainless steel, chrome plating, leather tanning, and vibrant pigments."}, {"number": 25, "symbol": "Mn", "name": "Manganese", "mass": "54.938", "category": "transition-metal", "group": 7, "period": 4, "row": 4, "col": 7, "block": "d", "phase": "Solid", "shells": [2, 8, 13, 2], "config": "[Ar] 3d⁵ 4s²", "melt": "1519 K", "boil": "2334 K", "density": "7.21 g/cm³", "en": "1.55", "discovered": "1774 · Johan Gottlieb Gahn", "summary": "A hard, brittle, silvery metal essential to steel production and biological photosynthesis (oxygen-evolving complex).", "uses": "Used in steelmaking to remove sulfur and improve toughness, aluminum alloys, and dry-cell/EV batteries."}, {"number": 26, "symbol": "Fe", "name": "Iron", "mass": "55.845", "category": "transition-metal", "group": 8, "period": 4, "row": 4, "col": 8, "block": "d", "phase": "Solid", "shells": [2, 8, 14, 2], "config": "[Ar] 3d⁶ 4s²", "melt": "1811 K", "boil": "3134 K", "density": "7.874 g/cm³", "en": "1.83", "discovered": "Ancient", "summary": "The most used and fourth most abundant element in Earth's crust, forming Earth's core and carrying oxygen in hemoglobin.", "uses": "Used in steel and cast iron for construction, vehicles, machinery, and magnetic cores."}, {"number": 27, "symbol": "Co", "name": "Cobalt", "mass": "58.933", "category": "transition-metal", "group": 9, "period": 4, "row": 4, "col": 9, "block": "d", "phase": "Solid", "shells": [2, 8, 15, 2], "config": "[Ar] 3d⁷ 4s²", "melt": "1768 K", "boil": "3200 K", "density": "8.90 g/cm³", "en": "1.88", "discovered": "1735 · Georg Brandt", "summary": "A hard, ferromagnetic, silver-gray transition metal famous for producing deep cobalt-blue glass and ceramics.", "uses": "Used in lithium-ion battery cathodes, high-temperature superalloys, magnets, and vitamin B12."}, {"number": 28, "symbol": "Ni", "name": "Nickel", "mass": "58.693", "category": "transition-metal", "group": 10, "period": 4, "row": 4, "col": 10, "block": "d", "phase": "Solid", "shells": [2, 8, 16, 2], "config": "[Ar] 3d⁸ 4s²", "melt": "1728 K", "boil": "3186 K", "density": "8.908 g/cm³", "en": "1.91", "discovered": "1751 · Axel Fredrik Cronstedt", "summary": "A silvery-white, corrosion-resistant ferromagnetic metal widely used in alloys and plating.", "uses": "Used in stainless steel, rechargeable EV batteries, coins, and corrosion-resistant superalloys."}, {"number": 29, "symbol": "Cu", "name": "Copper", "mass": "63.546", "category": "transition-metal", "group": 11, "period": 4, "row": 4, "col": 11, "block": "d", "phase": "Solid", "shells": [2, 8, 18, 1], "config": "[Ar] 3d¹⁰ 4s¹", "melt": "1357.77 K", "boil": "2835 K", "density": "8.96 g/cm³", "en": "1.90", "discovered": "Ancient", "summary": "A soft, malleable, reddish-orange metal with exceptional electrical and thermal conductivity.", "uses": "Used in electrical wiring, motors, plumbing, electronics PCBs, and architectural bronze/brass alloys."}, {"number": 30, "symbol": "Zn", "name": "Zinc", "mass": "65.38", "category": "transition-metal", "group": 12, "period": 4, "row": 4, "col": 12, "block": "d", "phase": "Solid", "shells": [2, 8, 18, 2], "config": "[Ar] 3d¹⁰ 4s²", "melt": "692.68 K", "boil": "1180 K", "density": "7.14 g/cm³", "en": "1.65", "discovered": "Ancient (isolated 1746 · Andreas Marggraf)", "summary": "A bluish-silver metal that protects steel from rusting through galvanization and serves as an essential trace nutrient.", "uses": "Used in galvanizing steel, brass alloys, die-casting, batteries, and zinc oxide sunscreens."}, {"number": 31, "symbol": "Ga", "name": "Gallium", "mass": "69.723", "category": "post-transition", "group": 13, "period": 4, "row": 4, "col": 13, "block": "p", "phase": "Solid", "shells": [2, 8, 18, 3], "config": "[Ar] 3d¹⁰ 4s² 4p¹", "melt": "302.91 K", "boil": "2673 K", "density": "5.91 g/cm³", "en": "1.81", "discovered": "1875 · Paul-Émile Lecoq de Boisbaudran", "summary": "A soft, silvery metal that melts just above room temperature (29.8 °C) in the palm of your hand.", "uses": "Used in GaAs and GaN semiconductors for LEDs, 5G RF chips, fast chargers, and solar cells."}, {"number": 32, "symbol": "Ge", "name": "Germanium", "mass": "72.630", "category": "metalloid", "group": 14, "period": 4, "row": 4, "col": 14, "block": "p", "phase": "Solid", "shells": [2, 8, 18, 4], "config": "[Ar] 3d¹⁰ 4s² 4p²", "melt": "1211.40 K", "boil": "3106 K", "density": "5.323 g/cm³", "en": "2.01", "discovered": "1886 · Clemens Winkler", "summary": "A lustrous, hard, grayish-white metalloid semiconductor that played a pivotal role in the invention of the transistor.", "uses": "Used in fiber-optic cables, infrared night-vision optics, solar cells, and high-speed electronics."}, {"number": 33, "symbol": "As", "name": "Arsenic", "mass": "74.922", "category": "metalloid", "group": 15, "period": 4, "row": 4, "col": 15, "block": "p", "phase": "Solid", "shells": [2, 8, 18, 5], "config": "[Ar] 3d¹⁰ 4s² 4p³", "melt": "1090 K (subl.)", "boil": "887 K (subl.)", "density": "5.727 g/cm³", "en": "2.18", "discovered": "Ancient", "summary": "A toxic metalloid existing in gray, yellow, and black allotropes, historically notorious as a poison.", "uses": "Used in small amounts in gallium arsenide (GaAs) semiconductors, lead-acid battery grids, and wood preservatives."}, {"number": 34, "symbol": "Se", "name": "Selenium", "mass": "78.971", "category": "nonmetal", "group": 16, "period": 4, "row": 4, "col": 16, "block": "p", "phase": "Solid", "shells": [2, 8, 18, 6], "config": "[Ar] 3d¹⁰ 4s² 4p⁴", "melt": "494 K", "boil": "958 K", "density": "4.81 g/cm³", "en": "2.55", "discovered": "1817 · Jöns Jacob Berzelius", "summary": "A photoconductive nonmetal whose electrical conductivity increases dramatically when exposed to light.", "uses": "Used in thin-film solar cells, glass decolorizing, photocopiers, and anti-dandruff shampoos."}, {"number": 35, "symbol": "Br", "name": "Bromine", "mass": "79.904", "category": "halogen", "group": 17, "period": 4, "row": 4, "col": 17, "block": "p", "phase": "Liquid", "shells": [2, 8, 18, 7], "config": "[Ar] 3d¹⁰ 4s² 4p⁵", "melt": "265.8 K", "boil": "332.0 K", "density": "3.1028 g/cm³", "en": "2.96", "discovered": "1826 · Antoine Jérôme Balard", "summary": "The only nonmetallic element that is a liquid at room temperature, appearing as a dense, fuming reddish-brown liquid.", "uses": "Used in flame retardants, drilling fluids, water purification, and agricultural chemicals."}, {"number": 36, "symbol": "Kr", "name": "Krypton", "mass": "83.798", "category": "noble-gas", "group": 18, "period": 4, "row": 4, "col": 18, "block": "p", "phase": "Gas", "shells": [2, 8, 18, 8], "config": "[Ar] 3d¹⁰ 4s² 4p⁶", "melt": "115.78 K", "boil": "119.93 K", "density": "0.003749 g/cm³", "en": "3.00", "discovered": "1898 · William Ramsay & Morris Travers", "summary": "A dense, colorless noble gas that emits a bright white-green glow in high-speed flash lamps.", "uses": "Used in high-speed photography flashes, energy-efficient window insulation, and excimer lasers."}, {"number": 37, "symbol": "Rb", "name": "Rubidium", "mass": "85.468", "category": "alkali-metal", "group": 1, "period": 5, "row": 5, "col": 1, "block": "s", "phase": "Solid", "shells": [2, 8, 18, 8, 1], "config": "[Kr] 5s¹", "melt": "312.45 K", "boil": "961 K", "density": "1.532 g/cm³", "en": "0.82", "discovered": "1861 · Robert Bunsen & Gustav Kirchhoff", "summary": "A very soft, silvery-white alkali metal that melts at 39.3 °C and ignites spontaneously in air.", "uses": "Used in atomic clocks, GPS synchronization, specialty glass, and quantum physics laser-cooling research."}, {"number": 38, "symbol": "Sr", "name": "Strontium", "mass": "87.62", "category": "alkaline-earth", "group": 2, "period": 5, "row": 5, "col": 2, "block": "s", "phase": "Solid", "shells": [2, 8, 18, 8, 2], "config": "[Kr] 5s²", "melt": "1050 K", "boil": "1655 K", "density": "2.64 g/cm³", "en": "0.95", "discovered": "1790 · Adair Crawford", "summary": "A soft, silvery alkaline earth metal that burns with a brilliant crimson-red flame.", "uses": "Used in red fireworks and flares, ferrite magnets, and optical atomic clocks."}, {"number": 39, "symbol": "Y", "name": "Yttrium", "mass": "88.906", "category": "transition-metal", "group": 3, "period": 5, "row": 5, "col": 3, "block": "d", "phase": "Solid", "shells": [2, 8, 18, 9, 2], "config": "[Kr] 4d¹ 5s²", "melt": "1799 K", "boil": "3609 K", "density": "4.472 g/cm³", "en": "1.22", "discovered": "1794 · Johan Gadolin", "summary": "A silvery-metallic transition metal almost always found alongside lanthanide rare-earth minerals.", "uses": "Used in YAG lasers, white LED phosphors, high-temperature superconductors (YBCO), and spark plugs."}, {"number": 40, "symbol": "Zr", "name": "Zirconium", "mass": "91.224", "category": "transition-metal", "group": 4, "period": 5, "row": 5, "col": 4, "block": "d", "phase": "Solid", "shells": [2, 8, 18, 10, 2], "config": "[Kr] 4d² 5s²", "melt": "2128 K", "boil": "4682 K", "density": "6.52 g/cm³", "en": "1.33", "discovered": "1789 · Martin Heinrich Klaproth", "summary": "A lustrous, grayish-white, strongly corrosion-resistant transition metal with very low neutron absorption.", "uses": "Used in nuclear reactor fuel cladding, cubic zirconia gemstones, ceramic knives, and dental crowns."}, {"number": 41, "symbol": "Nb", "name": "Niobium", "mass": "92.906", "category": "transition-metal", "group": 5, "period": 5, "row": 5, "col": 5, "block": "d", "phase": "Solid", "shells": [2, 8, 18, 12, 1], "config": "[Kr] 4d⁴ 5s¹", "melt": "2750 K", "boil": "5017 K", "density": "8.57 g/cm³", "en": "1.6", "discovered": "1801 · Charles Hatchett", "summary": "A ductile, gray transition metal that becomes a superconductor at cryogenic temperatures.", "uses": "Used in superconducting MRI and particle-accelerator magnets, pipeline steels, and jet engine alloys."}, {"number": 42, "symbol": "Mo", "name": "Molybdenum", "mass": "95.95", "category": "transition-metal", "group": 6, "period": 5, "row": 5, "col": 6, "block": "d", "phase": "Solid", "shells": [2, 8, 18, 13, 1], "config": "[Kr] 4d⁵ 5s¹", "melt": "2896 K", "boil": "4912 K", "density": "10.28 g/cm³", "en": "2.16", "discovered": "1778 · Carl Wilhelm Scheele", "summary": "A silvery metal with one of the highest melting points of all elements, essential to nitrogen-fixing enzymes.", "uses": "Used to strengthen high-temperature steels, industrial lubricants (MoS₂), and petroleum catalysts."}, {"number": 43, "symbol": "Tc", "name": "Technetium", "mass": "98", "category": "transition-metal", "group": 7, "period": 5, "row": 5, "col": 7, "block": "d", "phase": "Solid", "shells": [2, 8, 18, 13, 2], "config": "[Kr] 4d⁵ 5s²", "melt": "2430 K", "boil": "4538 K", "density": "11 g/cm³", "en": "1.9", "discovered": "1937 · Carlo Perrier & Emilio Segrè", "summary": "The lightest element with no stable isotopes; the first element to be artificially produced.", "uses": "Its metastable isotope Tc-99m is the most widely used radioisotope in medical nuclear imaging."}, {"number": 44, "symbol": "Ru", "name": "Ruthenium", "mass": "101.07", "category": "transition-metal", "group": 8, "period": 5, "row": 5, "col": 8, "block": "d", "phase": "Solid", "shells": [2, 8, 18, 15, 1], "config": "[Kr] 4d⁷ 5s¹", "melt": "2607 K", "boil": "4423 K", "density": "12.45 g/cm³", "en": "2.2", "discovered": "1844 · Karl Ernst Claus", "summary": "A rare, hard, silvery-white platinum-group metal resistant to most acids.", "uses": "Used in wear-resistant electrical contacts, chip resistors, solar cells, and chemical catalysis."}, {"number": 45, "symbol": "Rh", "name": "Rhodium", "mass": "102.91", "category": "transition-metal", "group": 9, "period": 5, "row": 5, "col": 9, "block": "d", "phase": "Solid", "shells": [2, 8, 18, 16, 1], "config": "[Kr] 4d⁸ 5s¹", "melt": "2237 K", "boil": "3968 K", "density": "12.41 g/cm³", "en": "2.28", "discovered": "1803 · William Hyde Wollaston", "summary": "An extraordinarily rare, silvery-white, corrosion-proof noble metal with high optical reflectivity.", "uses": "Used primarily in automotive three-way catalytic converters and white-gold jewelry plating."}, {"number": 46, "symbol": "Pd", "name": "Palladium", "mass": "106.42", "category": "transition-metal", "group": 10, "period": 5, "row": 5, "col": 10, "block": "d", "phase": "Solid", "shells": [2, 8, 18, 18], "config": "[Kr] 4d¹⁰", "melt": "1828.05 K", "boil": "3236 K", "density": "12.023 g/cm³", "en": "2.20", "discovered": "1803 · William Hyde Wollaston", "summary": "A lustrous silvery-white platinum-group metal capable of absorbing up to 900 times its own volume of hydrogen.", "uses": "Used in catalytic converters, electronics, hydrogen purification membranes, and dentistry."}, {"number": 47, "symbol": "Ag", "name": "Silver", "mass": "107.87", "category": "transition-metal", "group": 11, "period": 5, "row": 5, "col": 11, "block": "d", "phase": "Solid", "shells": [2, 8, 18, 18, 1], "config": "[Kr] 4d¹⁰ 5s¹", "melt": "1234.93 K", "boil": "2435 K", "density": "10.49 g/cm³", "en": "1.93", "discovered": "Ancient", "summary": "A soft, lustrous precious metal boasting the highest electrical and thermal conductivity of any element.", "uses": "Used in solar panel paste, electronics contacts, jewelry, mirrors, and antimicrobial coatings."}, {"number": 48, "symbol": "Cd", "name": "Cadmium", "mass": "112.41", "category": "transition-metal", "group": 12, "period": 5, "row": 5, "col": 12, "block": "d", "phase": "Solid", "shells": [2, 8, 18, 18, 2], "config": "[Kr] 4d¹⁰ 5s²", "melt": "594.22 K", "boil": "1040 K", "density": "8.65 g/cm³", "en": "1.69", "discovered": "1817 · Friedrich Stromeyer", "summary": "A soft, bluish-white toxic metal chemically similar to zinc and mercury.", "uses": "Used in CdTe thin-film solar panels, nuclear control rods, and specialized NiCd batteries."}, {"number": 49, "symbol": "In", "name": "Indium", "mass": "114.82", "category": "post-transition", "group": 13, "period": 5, "row": 5, "col": 13, "block": "p", "phase": "Solid", "shells": [2, 8, 18, 18, 3], "config": "[Kr] 4d¹⁰ 5s² 4p¹", "melt": "429.75 K", "boil": "2345 K", "density": "7.31 g/cm³", "en": "1.78", "discovered": "1863 · Ferdinand Reich & Hieronymous Richter", "summary": "A very soft, silvery-white post-transition metal that emits a high-pitched 'tin cry' when bent.", "uses": "Used as indium tin oxide (ITO) for transparent touchscreens, LCDs, and low-melting solders."}, {"number": 50, "symbol": "Sn", "name": "Tin", "mass": "118.71", "category": "post-transition", "group": 14, "period": 5, "row": 5, "col": 14, "block": "p", "phase": "Solid", "shells": [2, 8, 18, 18, 4], "config": "[Kr] 4d¹⁰ 5s² 4p²", "melt": "505.08 K", "boil": "2875 K", "density": "7.365 g/cm³", "en": "1.96", "discovered": "Ancient", "summary": "A silvery, malleable metal known since the Bronze Age for alloying with copper to make bronze.", "uses": "Used in lead-free electronics solder, tin-plated food cans, bronze alloys, and float glass manufacturing."}, {"number": 51, "symbol": "Sb", "name": "Antimony", "mass": "121.76", "category": "metalloid", "group": 15, "period": 5, "row": 5, "col": 15, "block": "p", "phase": "Solid", "shells": [2, 8, 18, 18, 5], "config": "[Kr] 4d¹⁰ 5s² 4p³", "melt": "903.78 K", "boil": "1860 K", "density": "6.697 g/cm³", "en": "2.05", "discovered": "Ancient", "summary": "A lustrous gray metalloid found chiefly in stibnite ore, known for expanding slightly when it freezes.", "uses": "Used in flame-retardant additives, lead-acid battery alloys, and semiconductor infrared detectors."}, {"number": 52, "symbol": "Te", "name": "Tellurium", "mass": "127.60", "category": "metalloid", "group": 16, "period": 5, "row": 5, "col": 16, "block": "p", "phase": "Solid", "shells": [2, 8, 18, 18, 6], "config": "[Kr] 4d¹⁰ 5s² 4p⁴", "melt": "722.66 K", "boil": "1261 K", "density": "6.24 g/cm³", "en": "2.1", "discovered": "1782 · Franz-Joseph Müller von Reichenstein", "summary": "A brittle, mildly toxic, silver-white metalloid chemically related to selenium and sulfur.", "uses": "Used in cadmium telluride (CdTe) solar cells, thermoelectric coolers, and rewritable optical discs."}, {"number": 53, "symbol": "I", "name": "Iodine", "mass": "126.90", "category": "halogen", "group": 17, "period": 5, "row": 5, "col": 17, "block": "p", "phase": "Solid", "shells": [2, 8, 18, 18, 7], "config": "[Kr] 4d¹⁰ 5s² 4p⁵", "melt": "386.85 K", "boil": "457.4 K", "density": "4.933 g/cm³", "en": "2.66", "discovered": "1811 · Bernard Courtois", "summary": "A heavy, lustrous dark-violet halogen that sublimates into a vivid purple vapor when warmed.", "uses": "Essential for thyroid hormones; used in iodized salt, medical antiseptics, and LCD polarizing films."}, {"number": 54, "symbol": "Xe", "name": "Xenon", "mass": "131.29", "category": "noble-gas", "group": 18, "period": 5, "row": 5, "col": 18, "block": "p", "phase": "Gas", "shells": [2, 8, 18, 18, 8], "config": "[Kr] 4d¹⁰ 5s² 4p⁶", "melt": "161.40 K", "boil": "165.05 K", "density": "0.005894 g/cm³", "en": "2.60", "discovered": "1898 · William Ramsay & Morris Travers", "summary": "A dense, colorless, odorless noble gas that glows bright blue in electric discharge tubes.", "uses": "Used in ion propulsion thrusters for spacecraft, high-intensity projector lamps, and general anesthesia."}, {"number": 55, "symbol": "Cs", "name": "Cesium", "mass": "132.91", "category": "alkali-metal", "group": 1, "period": 6, "row": 6, "col": 1, "block": "s", "phase": "Solid", "shells": [2, 8, 18, 18, 8, 1], "config": "[Xe] 6s¹", "melt": "301.7 K", "boil": "944 K", "density": "1.93 g/cm³", "en": "0.79", "discovered": "1860 · Robert Bunsen & Gustav Kirchhoff", "summary": "A soft, pale-gold alkali metal that melts at 28.5 °C and is the most electropositive stable element.", "uses": "Defines the SI second in cesium-133 atomic clocks; used in oil drilling fluids and photoelectric cells."}, {"number": 56, "symbol": "Ba", "name": "Barium", "mass": "137.33", "category": "alkaline-earth", "group": 2, "period": 6, "row": 6, "col": 2, "block": "s", "phase": "Solid", "shells": [2, 8, 18, 18, 8, 2], "config": "[Xe] 6s²", "melt": "1000 K", "boil": "2170 K", "density": "3.51 g/cm³", "en": "0.89", "discovered": "1808 · Humphry Davy", "summary": "A soft, silvery alkaline earth metal that oxidizes quickly in air and produces green flames when burned.", "uses": "Used in medical X-ray contrast meals (BaSO₄), drilling muds, and green pyrotechnics."}, {"number": 57, "symbol": "La", "name": "Lanthanum", "mass": "138.91", "category": "lanthanide", "group": 3, "period": 6, "row": 9, "col": 3, "block": "f", "phase": "Solid", "shells": [2, 8, 18, 18, 9, 2], "config": "[Xe] 5d¹ 6s²", "melt": "1193 K", "boil": "3737 K", "density": "6.162 g/cm³", "en": "1.10", "discovered": "1839 · Carl Gustaf Mosander", "summary": "A soft, ductile, silvery-white rare-earth metal that gives its name to the lanthanide series.", "uses": "Used in high-refractive-index camera lenses, NiMH hybrid vehicle batteries, and studio carbon-arc lighting."}, {"number": 58, "symbol": "Ce", "name": "Cerium", "mass": "140.12", "category": "lanthanide", "group": 3, "period": 6, "row": 9, "col": 4, "block": "f", "phase": "Solid", "shells": [2, 8, 18, 19, 9, 2], "config": "[Xe] 4f¹ 5d¹ 6s²", "melt": "1068 K", "boil": "3716 K", "density": "6.770 g/cm³", "en": "1.12", "discovered": "1803 · Jöns Jacob Berzelius & Wilhelm Hisinger", "summary": "The most abundant rare-earth element, tarnishing easily and sparking readily when struck.", "uses": "Used in lighter flints (ferrocerium), catalytic converters, and precision glass polishing powders."}, {"number": 59, "symbol": "Pr", "name": "Praseodymium", "mass": "140.91", "category": "lanthanide", "group": 3, "period": 6, "row": 9, "col": 5, "block": "f", "phase": "Solid", "shells": [2, 8, 18, 21, 8, 2], "config": "[Xe] 4f³ 6s²", "melt": "1208 K", "boil": "3793 K", "density": "6.77 g/cm³", "en": "1.13", "discovered": "1885 · Carl Auer von Welsbach", "summary": "A soft, silvery, malleable rare-earth metal whose salts give glass a vivid yellow-green hue.", "uses": "Used in high-strength neodymium magnets, aircraft engine alloys, and welder's protective goggles."}, {"number": 60, "symbol": "Nd", "name": "Neodymium", "mass": "144.24", "category": "lanthanide", "group": 3, "period": 6, "row": 9, "col": 6, "block": "f", "phase": "Solid", "shells": [2, 8, 18, 22, 8, 2], "config": "[Xe] 4f⁴ 6s²", "melt": "1297 K", "boil": "3347 K", "density": "7.01 g/cm³", "en": "1.14", "discovered": "1885 · Carl Auer von Welsbach", "summary": "A silvery rare-earth metal famous for forming the strongest permanent magnets known.", "uses": "Used in NdFeB permanent magnets for EV motors, wind turbines, headphones, and high-power lasers."}, {"number": 61, "symbol": "Pm", "name": "Promethium", "mass": "145", "category": "lanthanide", "group": 3, "period": 6, "row": 9, "col": 7, "block": "f", "phase": "Solid", "shells": [2, 8, 18, 23, 8, 2], "config": "[Xe] 4f⁵ 6s²", "melt": "1315 K", "boil": "3273 K", "density": "7.26 g/cm³", "en": "1.13", "discovered": "1945 · Jacob A. Marinsky, Lawrence E. Glendenin & Charles D. Coryell", "summary": "The only radioactive lanthanide, occurring in Earth's crust only in trace amounts from fission.", "uses": "Used in miniature beta-voltaic nuclear batteries for spacecraft and specialized luminous dials."}, {"number": 62, "symbol": "Sm", "name": "Samarium", "mass": "150.36", "category": "lanthanide", "group": 3, "period": 6, "row": 9, "col": 8, "block": "f", "phase": "Solid", "shells": [2, 8, 18, 24, 8, 2], "config": "[Xe] 4f⁶ 6s²", "melt": "1345 K", "boil": "2067 K", "density": "7.52 g/cm³", "en": "1.17", "discovered": "1879 · Paul-Émile Lecoq de Boisbaudran", "summary": "A moderately hard, silvery rare-earth metal that retains magnetic strength at high temperatures.", "uses": "Used in samarium-cobalt (SmCo) magnets for aerospace and defense, and cancer-pain radiotherapy."}, {"number": 63, "symbol": "Eu", "name": "Europium", "mass": "151.96", "category": "lanthanide", "group": 3, "period": 6, "row": 9, "col": 9, "block": "f", "phase": "Solid", "shells": [2, 8, 18, 25, 8, 2], "config": "[Xe] 4f⁷ 6s²", "melt": "1099 K", "boil": "1802 K", "density": "5.264 g/cm³", "en": "1.2", "discovered": "1901 · Eugène-Anatole Demarçay", "summary": "The most reactive of the lanthanides, exhibiting brilliant red and blue fluorescence under UV light.", "uses": "Used in anti-counterfeiting Euro banknote phosphors, LEDs, and nuclear control rods."}, {"number": 64, "symbol": "Gd", "name": "Gadolinium", "mass": "157.25", "category": "lanthanide", "group": 3, "period": 6, "row": 9, "col": 10, "block": "f", "phase": "Solid", "shells": [2, 8, 18, 25, 9, 2], "config": "[Xe] 4f⁷ 5d¹ 6s²", "melt": "1585 K", "boil": "3546 K", "density": "7.90 g/cm³", "en": "1.20", "discovered": "1880 · Jean Charles Galissard de Marignac", "summary": "A silvery-white rare-earth metal with strong paramagnetic properties and high thermal neutron capture.", "uses": "Used in intravenous MRI contrast agents, nuclear reactor shielding, and magnetocaloric cooling."}, {"number": 65, "symbol": "Tb", "name": "Terbium", "mass": "158.93", "category": "lanthanide", "group": 3, "period": 6, "row": 9, "col": 11, "block": "f", "phase": "Solid", "shells": [2, 8, 18, 27, 8, 2], "config": "[Xe] 4f⁹ 6s²", "melt": "1629 K", "boil": "3503 K", "density": "8.23 g/cm³", "en": "1.1", "discovered": "1843 · Carl Gustaf Mosander", "summary": "A malleable, silvery rare-earth metal whose ions emit a bright emerald-green luminescence.", "uses": "Used in green phosphors for displays and fluorescent lamps, and magnetostrictive actuators (Terfenol-D)."}, {"number": 66, "symbol": "Dy", "name": "Dysprosium", "mass": "162.50", "category": "lanthanide", "group": 3, "period": 6, "row": 9, "col": 12, "block": "f", "phase": "Solid", "shells": [2, 8, 18, 28, 8, 2], "config": "[Xe] 4f¹⁰ 6s²", "melt": "1680 K", "boil": "2840 K", "density": "8.540 g/cm³", "en": "1.22", "discovered": "1886 · Paul-Émile Lecoq de Boisbaudran", "summary": "A bright silver rare-earth metal with one of the highest magnetic strengths among all elements.", "uses": "Added to neodymium magnets to prevent demagnetization at high temperatures in EV motors."}, {"number": 67, "symbol": "Ho", "name": "Holmium", "mass": "164.93", "category": "lanthanide", "group": 3, "period": 6, "row": 9, "col": 13, "block": "f", "phase": "Solid", "shells": [2, 8, 18, 29, 8, 2], "config": "[Xe] 4f¹¹ 6s²", "melt": "1734 K", "boil": "2993 K", "density": "8.79 g/cm³", "en": "1.23", "discovered": "1878 · Marc Delafontaine & Jacques-Louis Soret", "summary": "A relatively soft, malleable rare-earth metal possessing the highest magnetic permeability of any element.", "uses": "Used in medical Ho:YAG surgical lasers, magnetic pole pieces, and nuclear control rods."}, {"number": 68, "symbol": "Er", "name": "Erbium", "mass": "167.26", "category": "lanthanide", "group": 3, "period": 6, "row": 9, "col": 14, "block": "f", "phase": "Solid", "shells": [2, 8, 18, 30, 8, 2], "config": "[Xe] 4f¹² 6s²", "melt": "1802 K", "boil": "3141 K", "density": "9.066 g/cm³", "en": "1.24", "discovered": "1843 · Carl Gustaf Mosander", "summary": "A silvery-white rare-earth metal whose ions give a delicate pink tint to glass and crystals.", "uses": "Essential in erbium-doped fiber amplifiers (EDFAs) that boost global internet fiber-optic signals."}, {"number": 69, "symbol": "Tm", "name": "Thulium", "mass": "168.93", "category": "lanthanide", "group": 3, "period": 6, "row": 9, "col": 15, "block": "f", "phase": "Solid", "shells": [2, 8, 18, 31, 8, 2], "config": "[Xe] 4f¹³ 6s²", "melt": "1818 K", "boil": "2223 K", "density": "9.32 g/cm³", "en": "1.25", "discovered": "1879 · Per Teodor Cleve", "summary": "The least abundant non-radioactive rare-earth metal, silvery and easily worked.", "uses": "Used in portable X-ray sources, surgical lasers, and high-temperature superconductors."}, {"number": 70, "symbol": "Yb", "name": "Ytterbium", "mass": "173.05", "category": "lanthanide", "group": 3, "period": 6, "row": 9, "col": 16, "block": "f", "phase": "Solid", "shells": [2, 8, 18, 32, 8, 2], "config": "[Xe] 4f¹⁴ 6s²", "melt": "1097 K", "boil": "1469 K", "density": "6.90 g/cm³", "en": "1.1", "discovered": "1878 · Jean Charles Galissard de Marignac", "summary": "A soft, malleable rare-earth metal with a filled 4f subshell, named after Ytterby, Sweden.", "uses": "Used in high-power fiber lasers, optical lattice atomic clocks, and stainless steel grain refinement."}, {"number": 71, "symbol": "Lu", "name": "Lutetium", "mass": "174.97", "category": "lanthanide", "group": 3, "period": 6, "row": 9, "col": 17, "block": "d", "phase": "Solid", "shells": [2, 8, 18, 32, 9, 2], "config": "[Xe] 4f¹⁴ 5d¹ 6s²", "melt": "1925 K", "boil": "3675 K", "density": "9.841 g/cm³", "en": "1.27", "discovered": "1907 · Georges Urbain & Carl Auer von Welsbach", "summary": "The densest, hardest, and highest-melting of the lanthanides, closing out the 4f series.", "uses": "Used in PET scan scintillation detectors (LSO), petroleum cracking catalysts, and targeted cancer therapy."}, {"number": 72, "symbol": "Hf", "name": "Hafnium", "mass": "178.49", "category": "transition-metal", "group": 4, "period": 6, "row": 6, "col": 4, "block": "d", "phase": "Solid", "shells": [2, 8, 18, 32, 10, 2], "config": "[Xe] 4f¹⁴ 5d² 6s²", "melt": "2506 K", "boil": "4876 K", "density": "13.31 g/cm³", "en": "1.3", "discovered": "1923 · Dirk Coster & George de Hevesy", "summary": "A lustrous, silvery-gray transition metal chemically almost identical to zirconium, yet a strong neutron absorber.", "uses": "Used in nuclear submarine control rods, plasma-cutting electrodes, and high-k transistor gate dielectrics."}, {"number": 73, "symbol": "Ta", "name": "Tantalum", "mass": "180.95", "category": "transition-metal", "group": 5, "period": 6, "row": 6, "col": 5, "block": "d", "phase": "Solid", "shells": [2, 8, 18, 32, 11, 2], "config": "[Xe] 4f¹⁴ 5d³ 6s²", "melt": "3290 K", "boil": "5731 K", "density": "16.69 g/cm³", "en": "1.5", "discovered": "1802 · Anders Gustaf Ekeberg", "summary": "A rare, hard, blue-gray transition metal almost completely immune to chemical attack below 150 °C.", "uses": "Used in miniature tantalum capacitors for smartphones, surgical implants, and chemical process equipment."}, {"number": 74, "symbol": "W", "name": "Tungsten", "mass": "183.84", "category": "transition-metal", "group": 6, "period": 6, "row": 6, "col": 6, "block": "d", "phase": "Solid", "shells": [2, 8, 18, 32, 12, 2], "config": "[Xe] 4f¹⁴ 5d⁴ 6s²", "melt": "3695 K", "boil": "6203 K", "density": "19.25 g/cm³", "en": "2.36", "discovered": "1783 · Juan José & Fausto Elhuyar", "summary": "A dense, steel-gray metal possessing the highest melting point (3,422 °C) of all pure metallic elements.", "uses": "Used in tungsten-carbide cutting tools, TIG welding electrodes, radiation shielding, and incandescent filaments."}, {"number": 75, "symbol": "Re", "name": "Rhenium", "mass": "186.21", "category": "transition-metal", "group": 7, "period": 6, "row": 6, "col": 7, "block": "d", "phase": "Solid", "shells": [2, 8, 18, 32, 13, 2], "config": "[Xe] 4f¹⁴ 5d⁵ 6s²", "melt": "3459 K", "boil": "5869 K", "density": "21.02 g/cm³", "en": "1.9", "discovered": "1925 · Walter Noddack, Ida Tacke & Otto Berg", "summary": "One of the rarest and densest elements in Earth's crust, with the third-highest melting point.", "uses": "Used in single-crystal nickel superalloys for jet turbine blades and high-octane gasoline catalysts."}, {"number": 76, "symbol": "Os", "name": "Osmium", "mass": "190.23", "category": "transition-metal", "group": 8, "period": 6, "row": 6, "col": 8, "block": "d", "phase": "Solid", "shells": [2, 8, 18, 32, 14, 2], "config": "[Xe] 4f¹⁴ 5d⁶ 6s²", "melt": "3306 K", "boil": "5285 K", "density": "22.59 g/cm³", "en": "2.2", "discovered": "1803 · Smithson Tennant", "summary": "A hard, brittle, bluish-white platinum-group metal and the densest naturally occurring element on Earth.", "uses": "Used in ultra-hard fountain pen nibs, electrical contacts, and specialized biological staining."}, {"number": 77, "symbol": "Ir", "name": "Iridium", "mass": "192.22", "category": "transition-metal", "group": 9, "period": 6, "row": 6, "col": 9, "block": "d", "phase": "Solid", "shells": [2, 8, 18, 32, 15, 2], "config": "[Xe] 4f¹⁴ 5d⁷ 6s²", "melt": "2719 K", "boil": "4403 K", "density": "22.56 g/cm³", "en": "2.20", "discovered": "1803 · Smithson Tennant", "summary": "The most corrosion-resistant metal known, famous for the K-Pg asteroid impact clay layer.", "uses": "Used in high-performance spark plugs, OLED emitters, crucibles for crystal growth, and proton-exchange electrolyzers."}, {"number": 78, "symbol": "Pt", "name": "Platinum", "mass": "195.08", "category": "transition-metal", "group": 10, "period": 6, "row": 6, "col": 10, "block": "d", "phase": "Solid", "shells": [2, 8, 18, 32, 17, 1], "config": "[Xe] 4f¹⁴ 5d⁹ 6s¹", "melt": "2041.4 K", "boil": "4098 K", "density": "21.45 g/cm³", "en": "2.28", "discovered": "1735 · Antonio de Ulloa", "summary": "A dense, malleable, silvery-white precious metal that resists oxidation and catalyzes key chemical reactions.", "uses": "Used in catalytic converters, hydrogen fuel cells, fine jewelry, and cisplatin chemotherapy drugs."}, {"number": 79, "symbol": "Au", "name": "Gold", "mass": "196.97", "category": "transition-metal", "group": 11, "period": 6, "row": 6, "col": 11, "block": "d", "phase": "Solid", "shells": [2, 8, 18, 32, 18, 1], "config": "[Xe] 4f¹⁴ 5d¹⁰ 6s¹", "melt": "1337.33 K", "boil": "3243 K", "density": "19.30 g/cm³", "en": "2.54", "discovered": "Ancient", "summary": "A soft, malleable, bright yellow precious metal that never rusts or tarnishes in air or water.", "uses": "Used in electronics connectors, spacecraft thermal shielding, jewelry, and monetary reserves."}, {"number": 80, "symbol": "Hg", "name": "Mercury", "mass": "200.59", "category": "transition-metal", "group": 12, "period": 6, "row": 6, "col": 12, "block": "d", "phase": "Liquid", "shells": [2, 8, 18, 32, 18, 2], "config": "[Xe] 4f¹⁴ 5d¹⁰ 6s²", "melt": "234.32 K", "boil": "629.88 K", "density": "13.534 g/cm³", "en": "2.00", "discovered": "Ancient", "summary": "The only metallic element that is liquid at standard room temperature, historically called quicksilver.", "uses": "Historically used in thermometers and barometers; today used in specialized fluorescent lamps and scientific instruments."}, {"number": 81, "symbol": "Tl", "name": "Thallium", "mass": "204.38", "category": "post-transition", "group": 13, "period": 6, "row": 6, "col": 13, "block": "p", "phase": "Solid", "shells": [2, 8, 18, 32, 18, 3], "config": "[Xe] 4f¹⁴ 5d¹⁰ 6s² 6p¹", "melt": "577 K", "boil": "1746 K", "density": "11.85 g/cm³", "en": "1.62", "discovered": "1861 · William Crookes", "summary": "A soft, gray, malleable post-transition metal that tarnishes quickly and is highly toxic.", "uses": "Used in infrared optical lenses, low-melting specialty glasses, and cardiac stress-test imaging (Tl-201)."}, {"number": 82, "symbol": "Pb", "name": "Lead", "mass": "207.2", "category": "post-transition", "group": 14, "period": 6, "row": 6, "col": 14, "block": "p", "phase": "Solid", "shells": [2, 8, 18, 32, 18, 4], "config": "[Xe] 4f¹⁴ 5d¹⁰ 6s² 6p²", "melt": "600.61 K", "boil": "2022 K", "density": "11.34 g/cm³", "en": "1.87", "discovered": "Ancient", "summary": "A heavy, soft, malleable metal with a dull gray luster and high density, blocking X-rays and gamma radiation.", "uses": "Used in lead-acid car batteries, radiation shielding aprons, and acoustic damping."}, {"number": 83, "symbol": "Bi", "name": "Bismuth", "mass": "208.98", "category": "post-transition", "group": 15, "period": 6, "row": 6, "col": 15, "block": "p", "phase": "Solid", "shells": [2, 8, 18, 32, 18, 5], "config": "[Xe] 4f¹⁴ 5d¹⁰ 6s² 6p³", "melt": "544.7 K", "boil": "1837 K", "density": "9.78 g/cm³", "en": "2.02", "discovered": "Ancient (isolated 1753 · Claude François Geoffroy)", "summary": "A brittle, silvery-pink metal known for forming iridescent hopper crystals and being strongly diamagnetic.", "uses": "Used in Pepto-Bismol, lead-free shotgun pellets and solders, and low-melting fire-sprinkler fuses."}, {"number": 84, "symbol": "Po", "name": "Polonium", "mass": "209", "category": "post-transition", "group": 16, "period": 6, "row": 6, "col": 16, "block": "p", "phase": "Solid", "shells": [2, 8, 18, 32, 18, 6], "config": "[Xe] 4f¹⁴ 5d¹⁰ 6s² 6p⁴", "melt": "527 K", "boil": "1235 K", "density": "9.196 g/cm³", "en": "2.0", "discovered": "1898 · Marie & Pierre Curie", "summary": "A rare, intensely radioactive metalloid/post-transition element discovered in pitchblende ore.", "uses": "Used in industrial static eliminators and historical radioisotope thermoelectric generators for space probes."}, {"number": 85, "symbol": "At", "name": "Astatine", "mass": "210", "category": "metalloid", "group": 17, "period": 6, "row": 6, "col": 17, "block": "p", "phase": "Solid", "shells": [2, 8, 18, 32, 18, 7], "config": "[Xe] 4f¹⁴ 5d¹⁰ 6s² 6p⁵", "melt": "575 K", "boil": "610 K", "density": "~7 g/cm³", "en": "2.2", "discovered": "1940 · Dale R. Corson, Kenneth Ross MacKenzie & Emilio Segrè", "summary": "The rarest naturally occurring element in Earth's crust, a highly radioactive halogen with short-lived isotopes.", "uses": "Researched for targeted alpha-particle cancer radiotherapy (At-211)."}, {"number": 86, "symbol": "Rn", "name": "Radon", "mass": "222", "category": "noble-gas", "group": 18, "period": 6, "row": 6, "col": 18, "block": "p", "phase": "Gas", "shells": [2, 8, 18, 32, 18, 8], "config": "[Xe] 4f¹⁴ 5d¹⁰ 6s² 6p⁶", "melt": "202 K", "boil": "211.5 K", "density": "0.00973 g/cm³", "en": "2.2", "discovered": "1900 · Friedrich Ernst Dorn", "summary": "A colorless, odorless, radioactive noble gas produced naturally from the decay of radium in soil and rock.", "uses": "Monitored in building basements for indoor air safety and studied in geology for earthquake/groundwater tracing."}, {"number": 87, "symbol": "Fr", "name": "Francium", "mass": "223", "category": "alkali-metal", "group": 1, "period": 7, "row": 7, "col": 1, "block": "s", "phase": "Solid", "shells": [2, 8, 18, 32, 18, 8, 1], "config": "[Rn] 7s¹", "melt": "300 K", "boil": "950 K", "density": "~1.87 g/cm³", "en": "0.7", "discovered": "1939 · Marguerite Perey", "summary": "An extremely radioactive alkali metal and the second rarest natural element, with a longest half-life of 22 minutes.", "uses": "Used exclusively in fundamental atomic-structure and parity-violation physics experiments."}, {"number": 88, "symbol": "Ra", "name": "Radium", "mass": "226", "category": "alkaline-earth", "group": 2, "period": 7, "row": 7, "col": 2, "block": "s", "phase": "Solid", "shells": [2, 8, 18, 32, 18, 8, 2], "config": "[Rn] 7s²", "melt": "973 K", "boil": "2010 K", "density": "5.5 g/cm³", "en": "0.9", "discovered": "1898 · Marie & Pierre Curie", "summary": "A silvery-white, intensely radioactive alkaline earth metal that glows faint blue in the dark.", "uses": "Used in targeted alpha therapy (Ra-223) for bone metastases and as a neutron source."}, {"number": 89, "symbol": "Ac", "name": "Actinium", "mass": "227", "category": "actinide", "group": 3, "period": 7, "row": 10, "col": 3, "block": "f", "phase": "Solid", "shells": [2, 8, 18, 32, 18, 9, 2], "config": "[Rn] 6d¹ 7s²", "melt": "1323 K", "boil": "3471 K", "density": "10 g/cm³", "en": "1.1", "discovered": "1899 · André-Louis Debierne", "summary": "A soft, silvery-white radioactive metal that glows pale blue in the dark due to Cherenkov/air ionization.", "uses": "Ac-225 is a leading isotope in next-generation targeted alpha therapy for cancer."}, {"number": 90, "symbol": "Th", "name": "Thorium", "mass": "232.04", "category": "actinide", "group": 3, "period": 7, "row": 10, "col": 4, "block": "f", "phase": "Solid", "shells": [2, 8, 18, 32, 18, 10, 2], "config": "[Rn] 6d² 7s²", "melt": "2115 K", "boil": "5061 K", "density": "11.7 g/cm³", "en": "1.3", "discovered": "1828 · Jöns Jacob Berzelius", "summary": "A weakly radioactive, silvery actinide metal about three times more abundant in Earth's crust than uranium.", "uses": "Used in high-temperature gas-lantern mantles, TIG welding electrodes, and next-gen thorium nuclear reactors."}, {"number": 91, "symbol": "Pa", "name": "Protactinium", "mass": "231.04", "category": "actinide", "group": 3, "period": 7, "row": 10, "col": 5, "block": "f", "phase": "Solid", "shells": [2, 8, 18, 32, 20, 9, 2], "config": "[Rn] 5f² 6d¹ 7s²", "melt": "1841 K", "boil": "4300 K", "density": "15.37 g/cm³", "en": "1.5", "discovered": "1913 · Kasimir Fajans & Oswald Helmuth Göhring", "summary": "A dense, silvery-gray, radioactive actinide metal occurring in trace amounts in uranium ores.", "uses": "Used primarily in basic nuclear chemistry research and paleoceanographic sediment dating."}, {"number": 92, "symbol": "U", "name": "Uranium", "mass": "238.03", "category": "actinide", "group": 3, "period": 7, "row": 10, "col": 6, "block": "f", "phase": "Solid", "shells": [2, 8, 18, 32, 21, 9, 2], "config": "[Rn] 5f³ 6d¹ 7s²", "melt": "1405.3 K", "boil": "4404 K", "density": "19.1 g/cm³", "en": "1.38", "discovered": "1789 · Martin Heinrich Klaproth", "summary": "A dense, silvery-gray, weakly radioactive actinide capable of sustaining nuclear fission chain reactions (U-235).", "uses": "Primary fuel for commercial nuclear power plants, naval propulsion, and depleted-uranium radiation shielding."}, {"number": 93, "symbol": "Np", "name": "Neptunium", "mass": "237", "category": "actinide", "group": 3, "period": 7, "row": 10, "col": 7, "block": "f", "phase": "Solid", "shells": [2, 8, 18, 32, 22, 9, 2], "config": "[Rn] 5f⁴ 6d¹ 7s²", "melt": "917 K", "boil": "4273 K", "density": "20.45 g/cm³", "en": "1.36", "discovered": "1940 · Edwin McMillan & Philip Abelson", "summary": "The first synthetic transuranium actinide element, formed in nuclear reactors from neutron capture in uranium.", "uses": "Used as a precursor to produce plutonium-238 for deep-space spacecraft power supplies."}, {"number": 94, "symbol": "Pu", "name": "Plutonium", "mass": "244", "category": "actinide", "group": 3, "period": 7, "row": 10, "col": 8, "block": "f", "phase": "Solid", "shells": [2, 8, 18, 32, 24, 8, 2], "config": "[Rn] 5f⁶ 7s²", "melt": "912.5 K", "boil": "3505 K", "density": "19.816 g/cm³", "en": "1.28", "discovered": "1940 · Glenn T. Seaborg et al.", "summary": "A dense, silvery radioactive actinide with six allotropic crystal structures and complex chemistry.", "uses": "Pu-238 powers NASA RTGs on Voyager, Curiosity, and Perseverance rovers; Pu-239 is a fissile nuclear fuel."}, {"number": 95, "symbol": "Am", "name": "Americium", "mass": "243", "category": "actinide", "group": 3, "period": 7, "row": 10, "col": 9, "block": "f", "phase": "Solid", "shells": [2, 8, 18, 32, 25, 8, 2], "config": "[Rn] 5f⁷ 7s²", "melt": "1449 K", "boil": "2880 K", "density": "12 g/cm³", "en": "1.13", "discovered": "1944 · Glenn T. Seaborg et al.", "summary": "A silvery, radioactive transuranic metal produced in nuclear reactors.", "uses": "Am-241 is used in virtually every household ionization smoke detector and industrial thickness gauges."}, {"number": 96, "symbol": "Cm", "name": "Curium", "mass": "247", "category": "actinide", "group": 3, "period": 7, "row": 10, "col": 10, "block": "f", "phase": "Solid", "shells": [2, 8, 18, 32, 25, 9, 2], "config": "[Rn] 5f⁷ 6d¹ 7s²", "melt": "1613 K", "boil": "3383 K", "density": "13.51 g/cm³", "en": "1.28", "discovered": "1944 · Glenn T. Seaborg, Ralph A. James & Albert Ghiorso", "summary": "A hard, dense, silvery radioactive actinide named after Marie and Pierre Curie.", "uses": "Used in Alpha Particle X-ray Spectrometers (APXS) aboard Mars rovers to analyze rock composition."}, {"number": 97, "symbol": "Bk", "name": "Berkelium", "mass": "247", "category": "actinide", "group": 3, "period": 7, "row": 10, "col": 11, "block": "f", "phase": "Solid", "shells": [2, 8, 18, 32, 27, 8, 2], "config": "[Rn] 5f⁹ 7s²", "melt": "1259 K", "boil": "2900 K", "density": "14.78 g/cm³", "en": "1.3", "discovered": "1949 · Stanley G. Thompson, Albert Ghiorso & Glenn T. Seaborg", "summary": "A soft, silvery-white radioactive actinide synthesized in Berkeley, California.", "uses": "Used in basic research and as a target material to synthesize heavier superheavy elements like tennessine."}, {"number": 98, "symbol": "Cf", "name": "Californium", "mass": "251", "category": "actinide", "group": 3, "period": 7, "row": 10, "col": 12, "block": "f", "phase": "Solid", "shells": [2, 8, 18, 32, 28, 8, 2], "config": "[Rn] 5f¹⁰ 7s²", "melt": "1173 K", "boil": "1743 K", "density": "15.1 g/cm³", "en": "1.3", "discovered": "1950 · Stanley G. Thompson, Kenneth Street Jr., Albert Ghiorso & Glenn T. Seaborg", "summary": "A malleable, silvery radioactive actinide that is an extraordinarily intense neutron emitter (Cf-252).", "uses": "Used as a portable neutron source for nuclear reactor startups, mineral analysis, and cancer therapy."}, {"number": 99, "symbol": "Es", "name": "Einsteinium", "mass": "252", "category": "actinide", "group": 3, "period": 7, "row": 10, "col": 13, "block": "f", "phase": "Solid", "shells": [2, 8, 18, 32, 29, 8, 2], "config": "[Rn] 5f¹¹ 7s²", "melt": "1133 K", "boil": "1269 K", "density": "8.84 g/cm³", "en": "1.3", "discovered": "1952 · Albert Ghiorso et al.", "summary": "A soft, silvery, intensely radioactive synthetic actinide discovered in 1952 thermonuclear test debris.", "uses": "Used strictly in scientific research to study heavy-element bonding and synthesize heavier elements."}, {"number": 100, "symbol": "Fm", "name": "Fermium", "mass": "257", "category": "actinide", "group": 3, "period": 7, "row": 10, "col": 14, "block": "f", "phase": "Solid", "shells": [2, 8, 18, 32, 30, 8, 2], "config": "[Rn] 5f¹² 7s²", "melt": "1800 K", "boil": "—", "density": "~9.7 g/cm³", "en": "1.3", "discovered": "1952 · Albert Ghiorso et al.", "summary": "The heaviest element that can be formed by neutron bombardment of lighter elements.", "uses": "Produced only in microscopic quantities for nuclear physics and chemistry research."}, {"number": 101, "symbol": "Md", "name": "Mendelevium", "mass": "258", "category": "actinide", "group": 3, "period": 7, "row": 10, "col": 15, "block": "f", "phase": "Solid", "shells": [2, 8, 18, 32, 31, 8, 2], "config": "[Rn] 5f¹³ 7s²", "melt": "1100 K", "boil": "—", "density": "~10.3 g/cm³", "en": "1.3", "discovered": "1955 · Albert Ghiorso et al.", "summary": "A synthetic radioactive actinide named in honor of Dmitri Mendeleev, creator of the periodic table.", "uses": "Studied in atom-at-a-time radiochemistry experiments to probe relativistic effects in heavy elements."}, {"number": 102, "symbol": "No", "name": "Nobelium", "mass": "259", "category": "actinide", "group": 3, "period": 7, "row": 10, "col": 16, "block": "f", "phase": "Solid", "shells": [2, 8, 18, 32, 32, 8, 2], "config": "[Rn] 5f¹⁴ 7s²", "melt": "1100 K", "boil": "—", "density": "~9.9 g/cm³", "en": "1.3", "discovered": "1958 · Georgy Flerov / Albert Ghiorso et al.", "summary": "A synthetic radioactive actinide named after Alfred Nobel, exhibiting an unusually stable +2 oxidation state.", "uses": "Used exclusively in nuclear physics and single-atom chemical research."}, {"number": 103, "symbol": "Lr", "name": "Lawrencium", "mass": "266", "category": "actinide", "group": 3, "period": 7, "row": 10, "col": 17, "block": "d", "phase": "Solid", "shells": [2, 8, 18, 32, 32, 8, 3], "config": "[Rn] 5f¹⁴ 7s² 7p¹", "melt": "1900 K", "boil": "—", "density": "~14.4 g/cm³", "en": "1.3", "discovered": "1961 · Albert Ghiorso et al.", "summary": "The final member of the actinide series, named after cyclotron inventor Ernest O. Lawrence.", "uses": "Used solely for fundamental nuclear structure and ionization-potential studies."}, {"number": 104, "symbol": "Rf", "name": "Rutherfordium", "mass": "267", "category": "transition-metal", "group": 4, "period": 7, "row": 7, "col": 4, "block": "d", "phase": "Solid", "shells": [2, 8, 18, 32, 32, 10, 2], "config": "[Rn] 5f¹⁴ 6d² 7s²", "melt": "2400 K (est.)", "boil": "5800 K (est.)", "density": "~23.2 g/cm³", "en": "—", "discovered": "1964 · Joint Institute for Nuclear Research / LBNL", "summary": "The first transactinide (superheavy) element, named after physicist Ernest Rutherford.", "uses": "Synthesized only in particle accelerators for nuclear physics research."}, {"number": 105, "symbol": "Db", "name": "Dubnium", "mass": "268", "category": "transition-metal", "group": 5, "period": 7, "row": 7, "col": 5, "block": "d", "phase": "Solid", "shells": [2, 8, 18, 32, 32, 11, 2], "config": "[Rn] 5f¹⁴ 6d³ 7s²", "melt": "—", "boil": "—", "density": "~29.3 g/cm³", "en": "—", "discovered": "1968 · JINR (Dubna) / LBNL", "summary": "A synthetic superheavy element named after the Russian research town of Dubna.", "uses": "Produced in trace quantities in accelerators to study group-5 chemical behavior."}, {"number": 106, "symbol": "Sg", "name": "Seaborgium", "mass": "269", "category": "transition-metal", "group": 6, "period": 7, "row": 7, "col": 6, "block": "d", "phase": "Solid", "shells": [2, 8, 18, 32, 32, 12, 2], "config": "[Rn] 5f¹⁴ 6d⁴ 7s²", "melt": "—", "boil": "—", "density": "~35.0 g/cm³", "en": "—", "discovered": "1974 · Albert Ghiorso et al.", "summary": "A synthetic superheavy element named after Nobel laureate Glenn T. Seaborg.", "uses": "Used only in gas-phase chemical research of superheavy group-6 compounds."}, {"number": 107, "symbol": "Bh", "name": "Bohrium", "mass": "270", "category": "transition-metal", "group": 7, "period": 7, "row": 7, "col": 7, "block": "d", "phase": "Solid", "shells": [2, 8, 18, 32, 32, 13, 2], "config": "[Rn] 5f¹⁴ 6d⁵ 7s²", "melt": "—", "boil": "—", "density": "~37.1 g/cm³", "en": "—", "discovered": "1981 · GSI Darmstadt", "summary": "A synthetic superheavy element named after Danish quantum physicist Niels Bohr.", "uses": "Studied solely in particle accelerator laboratories."}, {"number": 108, "symbol": "Hs", "name": "Hassium", "mass": "277", "category": "transition-metal", "group": 8, "period": 7, "row": 7, "col": 8, "block": "d", "phase": "Solid", "shells": [2, 8, 18, 32, 32, 14, 2], "config": "[Rn] 5f¹⁴ 6d⁶ 7s²", "melt": "—", "boil": "—", "density": "~40.7 g/cm³", "en": "—", "discovered": "1984 · GSI Darmstadt", "summary": "A synthetic superheavy element named after the German state of Hesse.", "uses": "Shown to form volatile tetroxides similar to osmium in single-atom chemistry experiments."}, {"number": 109, "symbol": "Mt", "name": "Meitnerium", "mass": "278", "category": "transition-metal", "group": 9, "period": 7, "row": 7, "col": 9, "block": "d", "phase": "Solid", "shells": [2, 8, 18, 32, 32, 15, 2], "config": "[Rn] 5f¹⁴ 6d⁷ 7s²", "melt": "—", "boil": "—", "density": "~37.4 g/cm³", "en": "—", "discovered": "1982 · GSI Darmstadt", "summary": "A synthetic superheavy element honoring nuclear fission pioneer Lise Meitner.", "uses": "Created only in heavy-ion fusion experiments for nuclear research."}, {"number": 110, "symbol": "Ds", "name": "Darmstadtium", "mass": "281", "category": "transition-metal", "group": 10, "period": 7, "row": 7, "col": 10, "block": "d", "phase": "Solid", "shells": [2, 8, 18, 32, 32, 17, 1], "config": "[Rn] 5f¹⁴ 6d⁹ 7s¹", "melt": "—", "boil": "—", "density": "~34.8 g/cm³", "en": "—", "discovered": "1994 · GSI Darmstadt", "summary": "A synthetic superheavy element named after Darmstadt, Germany, where it was discovered.", "uses": "Produced in minute quantities for nuclear decay studies."}, {"number": 111, "symbol": "Rg", "name": "Roentgenium", "mass": "282", "category": "transition-metal", "group": 11, "period": 7, "row": 7, "col": 11, "block": "d", "phase": "Solid", "shells": [2, 8, 18, 32, 32, 18, 1], "config": "[Rn] 5f¹⁴ 6d¹⁰ 7s¹", "melt": "—", "boil": "—", "density": "~28.7 g/cm³", "en": "—", "discovered": "1994 · GSI Darmstadt", "summary": "A synthetic superheavy element named after Wilhelm Röntgen, discoverer of X-rays.", "uses": "Studied exclusively in nuclear physics laboratories."}, {"number": 112, "symbol": "Cn", "name": "Copernicium", "mass": "285", "category": "transition-metal", "group": 12, "period": 7, "row": 7, "col": 12, "block": "d", "phase": "Liquid (est.)", "shells": [2, 8, 18, 32, 32, 18, 2], "config": "[Rn] 5f¹⁴ 6d¹⁰ 7s²", "melt": "283 K (est.)", "boil": "340 K (est.)", "density": "~14.0 g/cm³", "en": "—", "discovered": "1996 · GSI Darmstadt", "summary": "A synthetic superheavy element named after Nicolaus Copernicus, predicted to be volatile due to relativistic effects.", "uses": "Used only in fundamental superheavy-element research."}, {"number": 113, "symbol": "Nh", "name": "Nihonium", "mass": "286", "category": "post-transition", "group": 13, "period": 7, "row": 7, "col": 13, "block": "p", "phase": "Solid (est.)", "shells": [2, 8, 18, 32, 32, 18, 3], "config": "[Rn] 5f¹⁴ 6d¹⁰ 7s² 7p¹", "melt": "700 K (est.)", "boil": "1430 K (est.)", "density": "~16 g/cm³", "en": "—", "discovered": "2004 · RIKEN (Kosuke Morita et al.)", "summary": "The first element discovered in Asia, named after Nihon (Japan) where it was synthesized at RIKEN.", "uses": "Used solely for nuclear physics research."}, {"number": 114, "symbol": "Fl", "name": "Flerovium", "mass": "289", "category": "post-transition", "group": 14, "period": 7, "row": 7, "col": 14, "block": "p", "phase": "Solid (est.)", "shells": [2, 8, 18, 32, 32, 18, 4], "config": "[Rn] 5f¹⁴ 6d¹⁰ 7s² 7p²", "melt": "200 K (est.)", "boil": "380 K (est.)", "density": "~11.4 g/cm³", "en": "—", "discovered": "1999 · JINR & LLNL", "summary": "A superheavy element named after the Flerov Laboratory, predicted to exhibit quasi-noble-gas behavior.", "uses": "Studied in particle accelerators near the theoretical 'island of stability'."}, {"number": 115, "symbol": "Mc", "name": "Moscovium", "mass": "290", "category": "post-transition", "group": 15, "period": 7, "row": 7, "col": 15, "block": "p", "phase": "Solid (est.)", "shells": [2, 8, 18, 32, 32, 18, 5], "config": "[Rn] 5f¹⁴ 6d¹⁰ 7s² 7p³", "melt": "670 K (est.)", "boil": "1400 K (est.)", "density": "~13.5 g/cm³", "en": "—", "discovered": "2003 · JINR & LLNL", "summary": "A synthetic superheavy element named after the Moscow Oblast region.", "uses": "Used exclusively in nuclear physics research."}, {"number": 116, "symbol": "Lv", "name": "Livermorium", "mass": "293", "category": "post-transition", "group": 16, "period": 7, "row": 7, "col": 16, "block": "p", "phase": "Solid (est.)", "shells": [2, 8, 18, 32, 32, 18, 6], "config": "[Rn] 5f¹⁴ 6d¹⁰ 7s² 7p⁴", "melt": "709 K (est.)", "boil": "1085 K (est.)", "density": "~12.9 g/cm³", "en": "—", "discovered": "2000 · JINR & LLNL", "summary": "A synthetic superheavy element named after Lawrence Livermore National Laboratory.", "uses": "Produced only in accelerator experiments for superheavy decay studies."}, {"number": 117, "symbol": "Ts", "name": "Tennessine", "mass": "294", "category": "halogen", "group": 17, "period": 7, "row": 7, "col": 17, "block": "p", "phase": "Solid (est.)", "shells": [2, 8, 18, 32, 32, 18, 7], "config": "[Rn] 5f¹⁴ 6d¹⁰ 7s² 7p⁵", "melt": "723 K (est.)", "boil": "883 K (est.)", "density": "~7.2 g/cm³", "en": "—", "discovered": "2010 · JINR, ORNL & Vanderbilt", "summary": "The second-heaviest known element, named in recognition of Tennessee's contributions to heavy-element synthesis.", "uses": "Used solely for fundamental nuclear research."}, {"number": 118, "symbol": "Og", "name": "Oganesson", "mass": "294", "category": "noble-gas", "group": 18, "period": 7, "row": 7, "col": 18, "block": "p", "phase": "Solid (est.)", "shells": [2, 8, 18, 32, 32, 18, 8], "config": "[Rn] 5f¹⁴ 6d¹⁰ 7s² 7p⁶", "melt": "325 K (est.)", "boil": "450 K (est.)", "density": "~7.2 g/cm³", "en": "—", "discovered": "2002 · JINR & LLNL (Yuri Oganessian)", "summary": "The heaviest known element on the periodic table, named after nuclear physicist Yuri Oganessian.", "uses": "Produced only a handful of atoms in history for nuclear structure research."}];
+
+    const CATEGORIES = {
+      'all': { label: 'All (118)', color: '#ffffff' },
+      'alkali-metal': { label: 'Alkali Metals', color: 'var(--cat-alkali-metal)' },
+      'alkaline-earth': { label: 'Alkaline Earth', color: 'var(--cat-alkaline-earth)' },
+      'transition-metal': { label: 'Transition Metals', color: 'var(--cat-transition-metal)' },
+      'post-transition': { label: 'Post-Transition', color: 'var(--cat-post-transition)' },
+      'metalloid': { label: 'Metalloids', color: 'var(--cat-metalloid)' },
+      'nonmetal': { label: 'Nonmetals', color: 'var(--cat-nonmetal)' },
+      'halogen': { label: 'Halogens', color: 'var(--cat-halogen)' },
+      'noble-gas': { label: 'Noble Gases', color: 'var(--cat-noble-gas)' },
+      'lanthanide': { label: 'Lanthanides', color: 'var(--cat-lanthanide)' },
+      'actinide': { label: 'Actinides', color: 'var(--cat-actinide)' }
+    };
+
+    let selectedNumber = 1;
+    let activeCategory = 'all';
+    let searchQuery = '';
+    let likedSet = new Set();
+
+    try {
+      const saved = JSON.parse(localStorage.getItem('elemental_likes') || '[]');
+      if (Array.isArray(saved)) likedSet = new Set(saved);
+    } catch (e) {}
+
+    const ptableGrid = document.getElementById('ptableGrid');
+    const filterBar = document.getElementById('filterBar');
+    const searchInput = document.getElementById('searchInput');
+    const randomBtn = document.getElementById('randomBtn');
+    const likeBtn = document.getElementById('likeBtn');
+    const shareBtn = document.getElementById('shareBtn');
+    const launchBtn = document.getElementById('launchBtn');
+    const prevElBtn = document.getElementById('prevElBtn');
+    const nextElBtn = document.getElementById('nextElBtn');
+    const backTopBtn = document.getElementById('backTopBtn');
+    const toast = document.getElementById('toast');
+    let toastTimer = null;
+
+    function showToast(message) {
+      toast.textContent = message;
+      toast.classList.add('is-visible');
+      clearTimeout(toastTimer);
+      toastTimer = setTimeout(() => {
+        toast.classList.remove('is-visible');
+      }, 2200);
+    }
+
+    function saveLikes() {
+      try {
+        localStorage.setItem('elemental_likes', JSON.stringify(Array.from(likedSet)));
+      } catch (e) {}
+    }
+
+    function renderFilters() {
+      filterBar.innerHTML = '';
+      Object.entries(CATEGORIES).forEach(([key, meta]) => {
+        const btn = document.createElement('button');
+        btn.type = 'button';
+        btn.className = 'filter-pill' + (activeCategory === key ? ' is-active' : '');
+        if (key !== 'all') {
+          const dot = document.createElement('span');
+          dot.className = 'filter-dot';
+          dot.style.backgroundColor = meta.color;
+          btn.appendChild(dot);
+        }
+        const label = document.createElement('span');
+        label.textContent = meta.label;
+        btn.appendChild(label);
+        btn.addEventListener('click', () => {
+          activeCategory = key;
+          renderFilters();
+          renderTable();
+        });
+        filterBar.appendChild(btn);
+      });
+    }
+
+    function renderTable() {
+      ptableGrid.innerHTML = '';
+      const q = searchQuery.trim().toLowerCase();
+
+      // Series markers for 57-71 and 89-103 in main grid
+      const lanMarker = document.createElement('div');
+      lanMarker.className = 'series-marker';
+      lanMarker.style.gridRow = '6';
+      lanMarker.style.gridColumn = '3';
+      lanMarker.textContent = '57–71';
+      ptableGrid.appendChild(lanMarker);
+
+      const actMarker = document.createElement('div');
+      actMarker.className = 'series-marker';
+      actMarker.style.gridRow = '7';
+      actMarker.style.gridColumn = '3';
+      actMarker.textContent = '89–103';
+      ptableGrid.appendChild(actMarker);
+
+      ELEMENTS.forEach((el) => {
+        const tile = document.createElement('button');
+        tile.type = 'button';
+        tile.className = 'el-tile';
+        tile.style.gridRow = String(el.row);
+        tile.style.gridColumn = String(el.col);
+        tile.style.backgroundColor = CATEGORIES[el.category].color;
+        tile.setAttribute('aria-label', `${el.name}, atomic number ${el.number}`);
+
+        const matchesCat = activeCategory === 'all' || el.category === activeCategory;
+        const matchesQuery = !q ||
+          el.name.toLowerCase().includes(q) ||
+          el.symbol.toLowerCase().includes(q) ||
+          String(el.number) === q;
+
+        if (!matchesCat || !matchesQuery) {
+          tile.classList.add('is-dimmed');
+        }
+        if (el.number === selectedNumber) {
+          tile.classList.add('is-selected');
+        }
+
+        tile.innerHTML = `
+          <span class="el-num">${el.number}</span>
+          <span class="el-sym">${el.symbol}</span>
+          <span class="el-name">${el.name}</span>
+        `;
+
+        tile.addEventListener('click', () => {
+          selectElement(el.number, true);
+        });
+        ptableGrid.appendChild(tile);
+      });
+    }
+
+    function renderBohrSVG(el) {
+      const size = 240;
+      const cx = size / 2;
+      const cy = size / 2;
+      const shells = el.shells;
+      const maxR = 104;
+      const minR = 26;
+      const step = shells.length > 1 ? (maxR - minR) / (shells.length - 1) : 0;
+
+      let svgParts = [
+        `<svg class="bohr-svg" viewBox="0 0 ${size} ${size}" role="img" aria-label="Bohr electron shell diagram for ${el.name}">`,
+        `<circle cx="${cx}" cy="${cy}" r="18" fill="#202124" />`,
+        `<text x="${cx}" y="${cy + 5}" text-anchor="middle" fill="#ffffff" font-family="Inter, sans-serif" font-size="13" font-weight="700">${el.symbol}</text>`
+      ];
+
+      shells.forEach((count, idx) => {
+        const r = shells.length === 1 ? 58 : minR + idx * step;
+        svgParts.push(`<circle cx="${cx}" cy="${cy}" r="${r.toFixed(1)}" fill="none" stroke="#5f6368" stroke-width="1" stroke-dasharray="3 2" />`);
+        for (let i = 0; i < count; i++) {
+          const angle = (2 * Math.PI * i) / count - Math.PI / 2;
+          const ex = cx + r * Math.cos(angle);
+          const ey = cy + r * Math.sin(angle);
+          svgParts.push(`<circle cx="${ex.toFixed(1)}" cy="${ey.toFixed(1)}" r="3.2" fill="#1a73e8" stroke="#ffffff" stroke-width="0.8" />`);
+        }
+      });
+
+      svgParts.push('</svg>');
+      return svgParts.join('');
+    }
+
+    function renderDetails(el) {
+      document.getElementById('elTitle').textContent = el.name;
+      document.getElementById('elSymbolBadge').textContent = `${el.symbol} · #${el.number}`;
+      document.getElementById('elSummary').textContent = el.summary;
+      document.getElementById('elMeta').textContent =
+        `Atomic #${el.number} | Mass: ${el.mass} u | Discovered: ${el.discovered}`;
+
+      const tagsWrap = document.getElementById('elTags');
+      const catLabel = CATEGORIES[el.category].label.replace(/s$/, '');
+      tagsWrap.innerHTML = `
+        <span class="tag-pill" style="background:${CATEGORIES[el.category].color}">${catLabel}</span>
+        <span class="tag-pill">${el.phase}</span>
+        <span class="tag-pill">${el.block}-block</span>
+      `;
+
+      const nextNum = el.number === 118 ? 1 : el.number + 1;
+      const nextEl = ELEMENTS[nextNum - 1];
+      document.getElementById('launchBtnText').textContent = `Next: ${nextEl.name} (${nextEl.symbol})`;
+
+      // Like button state
+      const isLiked = likedSet.has(el.number);
+      likeBtn.classList.toggle('is-liked', isLiked);
+      likeBtn.setAttribute('aria-pressed', String(isLiked));
+      likeBtn.querySelector('path').setAttribute('fill', isLiked ? 'currentColor' : 'none');
+
+      // Bohr visual
+      document.getElementById('bohrAtomic').textContent = `Z = ${el.number}`;
+      document.getElementById('bohrMass').textContent = `${el.mass} u`;
+      document.getElementById('bohrWrap').innerHTML = renderBohrSVG(el);
+      document.getElementById('bohrConfig').textContent = el.config;
+      document.getElementById('bohrShells').textContent = `Shells: ${el.shells.join(' · ')}`;
+
+      // Bottom details card
+      document.getElementById('detailsLead').textContent =
+        `Period ${el.period} · Group ${el.group} · ${el.block}-block · Standard State: ${el.phase}`;
+      document.getElementById('detailsOverview').textContent = el.summary;
+      document.getElementById('detailsUses').textContent = `Applications & Uses: ${el.uses}`;
+
+      document.getElementById('detailsProps').innerHTML = `
+        <li><span class="details-list-icon">01.</span><span><strong>Electron Configuration:</strong> ${el.config} (Shells: ${el.shells.join(', ')})</span></li>
+        <li><span class="details-list-icon">02.</span><span><strong>Melting / Boiling Point:</strong> ${el.melt} / ${el.boil}</span></li>
+        <li><span class="details-list-icon">03.</span><span><strong>Density &amp; Electronegativity:</strong> ${el.density} · χ = ${el.en}</span></li>
+        <li><span class="details-list-icon">04.</span><span><strong>Discovery:</strong> ${el.discovered}</span></li>
+      `;
+
+      document.getElementById('specGrid').innerHTML = `
+        <div class="spec-item"><span class="spec-key">Atomic Number</span><span class="spec-val">${el.number}</span></div>
+        <div class="spec-item"><span class="spec-key">Atomic Mass</span><span class="spec-val">${el.mass} u</span></div>
+        <div class="spec-item"><span class="spec-key">Phase (298 K)</span><span class="spec-val">${el.phase}</span></div>
+        <div class="spec-item"><span class="spec-key">Block</span><span class="spec-val">${el.block}-block</span></div>
+        <div class="spec-item"><span class="spec-key">Group / Period</span><span class="spec-val">${el.group} / ${el.period}</span></div>
+        <div class="spec-item"><span class="spec-key">Electronegativity</span><span class="spec-val">${el.en}</span></div>
+      `;
+
+      renderFavorites();
+    }
+
+    function renderFavorites() {
+      const wrap = document.getElementById('favoritesWrap');
+      wrap.innerHTML = '';
+      if (likedSet.size === 0) {
+        const p = document.createElement('span');
+        p.className = 'fav-empty';
+        p.textContent = 'Click the heart button on any element to bookmark it here.';
+        wrap.appendChild(p);
+        return;
+      }
+      Array.from(likedSet).sort((a, b) => a - b).forEach((num) => {
+        const el = ELEMENTS[num - 1];
+        if (!el) return;
+        const chip = document.createElement('button');
+        chip.type = 'button';
+        chip.className = 'fav-chip';
+        chip.textContent = `${el.symbol} #${el.number}`;
+        chip.addEventListener('click', () => selectElement(el.number, true));
+        wrap.appendChild(chip);
+      });
+    }
+
+    function selectElement(num, shouldScroll = false) {
+      selectedNumber = num;
+      const el = ELEMENTS[num - 1];
+      renderTable();
+      renderDetails(el);
+      try {
+        history.replaceState(null, '', '#element=' + el.symbol);
+      } catch (e) {}
+      if (shouldScroll) {
+        document.getElementById('element-card').scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }
+    }
+
+    // Event listeners
+    searchInput.addEventListener('input', (e) => {
+      searchQuery = e.target.value;
+      renderTable();
+    });
+
+    randomBtn.addEventListener('click', () => {
+      const rand = Math.floor(Math.random() * 118) + 1;
+      selectElement(rand, false);
+      showToast(`Selected ${ELEMENTS[rand - 1].name}`);
+    });
+
+    launchBtn.addEventListener('click', () => {
+      const nextNum = selectedNumber === 118 ? 1 : selectedNumber + 1;
+      selectElement(nextNum, false);
+    });
+
+    prevElBtn.addEventListener('click', () => {
+      const prevNum = selectedNumber === 1 ? 118 : selectedNumber - 1;
+      selectElement(prevNum, false);
+    });
+
+    nextElBtn.addEventListener('click', () => {
+      const nextNum = selectedNumber === 118 ? 1 : selectedNumber + 1;
+      selectElement(nextNum, false);
+    });
+
+    backTopBtn.addEventListener('click', () => {
+      document.getElementById('periodic-table').scrollIntoView({ behavior: 'smooth', block: 'start' });
+    });
+
+    likeBtn.addEventListener('click', () => {
+      const el = ELEMENTS[selectedNumber - 1];
+      if (likedSet.has(selectedNumber)) {
+        likedSet.delete(selectedNumber);
+        showToast(`Removed ${el.name} from bookmarks`);
+      } else {
+        likedSet.add(selectedNumber);
+        showToast(`Bookmarked ${el.name}`);
+      }
+      saveLikes();
+      renderDetails(el);
+    });
+
+    shareBtn.addEventListener('click', async () => {
+      const el = ELEMENTS[selectedNumber - 1];
+      const shareUrl = window.location.href.split('#')[0] + '#element=' + el.symbol;
+      try {
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+          await navigator.clipboard.writeText(shareUrl);
+        } else {
+          const tempInput = document.createElement('input');
+          tempInput.value = shareUrl;
+          document.body.appendChild(tempInput);
+          tempInput.select();
+          document.execCommand('copy');
+          document.body.removeChild(tempInput);
+        }
+        showToast(`Copied ${el.name} link to clipboard`);
+      } catch (err) {
+        showToast(`${el.name} (#${el.number}) ready to share`);
+      }
+    });
+
+    // Check URL hash on load
+    (function init() {
+      const hash = window.location.hash || '';
+      const m = hash.match(/^#element=([A-Za-z]{1,3}|\d{1,3})$/);
+      if (m) {
+        const val = m[1].toLowerCase();
+        const found = ELEMENTS.find(e => e.symbol.toLowerCase() === val || String(e.number) === val);
+        if (found) selectedNumber = found.number;
+      }
+      renderFilters();
+      renderTable();
+      renderDetails(ELEMENTS[selectedNumber - 1]);
+    })();
+  </script>
+</body>
+</html>
